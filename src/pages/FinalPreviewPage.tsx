@@ -1,7 +1,9 @@
 import { useState } from 'react'
+import { Link } from 'react-router-dom'
 import {
   Play, Pause, Film, FileText, Image, Scissors, Cpu, Send, Download, Sparkles,
-  Search, ShieldCheck, Link, CheckCircle2, Music, Mic, Video, RefreshCw, ArrowLeft,
+  Search, ShieldCheck, CheckCircle2, Music, Mic, Video, RefreshCw, ArrowLeft,
+  Link as LinkIcon,
 } from 'lucide-react'
 import { sampleProject } from '../lib/openmontage-schema'
 
@@ -17,13 +19,13 @@ const TYPE_ICON: Record<string, any> = {
 
 // 流水線階段（成品預覽階段，全部已完成）
 const STAGES = [
-  { key: 'research', label: '選題挖掘', icon: Search, status: 'complete', desc: 'AI 已分析熱門趨勢與競品內容，完成選題策劃。' },
-  { key: 'proposal', label: '方案提案', icon: Sparkles, status: 'complete', desc: 'AI 已生成完整創作方案，包含風格定位與結構規劃。' },
-  { key: 'script', label: '腳本創作', icon: FileText, status: 'complete', desc: 'AI 已根據選題生成腳本大綱，支持在線編輯調整。' },
-  { key: 'scene', label: '分鏡規劃', icon: Film, status: 'complete', desc: 'AI 已完成分鏡設計，確定每個鏡頭的畫面與時長。' },
-  { key: 'assets', label: '素材生成', icon: Image, status: 'complete', desc: '已生成視頻、圖片、語音等全部素材，可預覽確認。' },
-  { key: 'edit', label: '智能剪輯', icon: Scissors, status: 'complete', desc: 'AI 已自動完成素材拼接、轉場與節奏優化。' },
-  { key: 'compose', label: '合成渲染', icon: Cpu, status: 'complete', desc: '已完成最終渲染，視頻準備就緒可供發布。' },
+  { key: 'research', label: '選題挖掘', icon: Search, status: 'complete', route: '/topic-mining' },
+  { key: 'proposal', label: '方案提案', icon: Sparkles, status: 'complete', route: '/script-creation' },
+  { key: 'script', label: '腳本創作', icon: FileText, status: 'complete', route: '/script-creation' },
+  { key: 'scene', label: '分鏡規劃', icon: Film, status: 'complete', route: '/video-generation' },
+  { key: 'assets', label: '素材生成', icon: Image, status: 'complete', route: '/video-generation' },
+  { key: 'edit', label: '智能剪輯', icon: Scissors, status: 'complete', route: '/smart-editing' },
+  { key: 'compose', label: '合成渲染', icon: Cpu, status: 'complete', route: '/final-preview' },
 ]
 
 // 示意性的剪輯 / 終審 / 渲染 / 發布數據（sampleProject 未含此類後製契約，僅作 UI 演示）
@@ -200,33 +202,18 @@ export default function FinalPreviewPage() {
               const Icon = st.icon
               return (
                 <div key={st.key} className="flex items-center shrink-0">
-                  <div className="flex flex-col items-center gap-1 px-2.5 py-2 rounded-xl bg-white border border-gray-100 shadow-sm w-[84px]">
-                    <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center">
+                  <Link
+                    to={st.route}
+                    className="flex flex-col items-center gap-1 px-2.5 py-2 rounded-xl bg-white border border-gray-100 shadow-sm w-[84px] hover:border-violet-300 hover:shadow-md hover:bg-violet-50/50 transition-all cursor-pointer group"
+                    title={`前往 ${st.label}`}
+                  >
+                    <div className="w-8 h-8 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center group-hover:bg-violet-200 transition-colors">
                       <Icon className="w-4 h-4" />
                     </div>
                     <div className="text-[11px] text-gray-700 font-medium leading-tight text-center">{st.label}</div>
                     <StatusChip status={st.status} />
-                  </div>
+                  </Link>
                   {i < STAGES.length - 1 && <ArrowLeft className="w-4 h-4 text-gray-300 shrink-0 rotate-180" />}
-                </div>
-              )
-            })}
-          </div>
-          <div className="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-4 gap-4 mt-4">
-            {STAGES.map((st) => {
-              const Icon = st.icon
-              return (
-                <div key={st.key} className="rounded-xl bg-white border border-gray-100 p-4">
-                  <div className="flex items-center gap-2 mb-2">
-                    <div className="w-7 h-7 rounded-lg bg-violet-100 text-violet-600 flex items-center justify-center">
-                      <Icon className="w-3.5 h-3.5" />
-                    </div>
-                    <div className="text-[13px] font-semibold text-gray-800">{st.label}</div>
-                    <StatusChip status={st.status} />
-                  </div>
-                  <div className="text-[12px] text-gray-600 leading-relaxed">
-                    {st.desc}
-                  </div>
                 </div>
               )
             })}
@@ -390,7 +377,7 @@ export default function FinalPreviewPage() {
 
         {/* 導出提示 */}
         <div className="rounded-xl bg-violet-50 border border-violet-100 p-4 flex items-start gap-3">
-          <Link className="w-5 h-5 text-violet-500 mt-0.5 flex-shrink-0" />
+          <LinkIcon className="w-5 h-5 text-violet-500 mt-0.5 flex-shrink-0" />
           <div className="text-[12.5px] text-gray-600 leading-relaxed">
             <span className="font-medium text-gray-800">項目已準備就緒。</span>
             所有製作階段已完成審核，視頻可直接發布至各平台。如需修改，可返回對應步驟重新編輯。
