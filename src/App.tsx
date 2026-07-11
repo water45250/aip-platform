@@ -9,6 +9,7 @@ import VoiceClonePage from './pages/VoiceClonePage'
 import DigitalHumanPage from './pages/DigitalHumanPage'
 import SmartEditingPage from './pages/SmartEditingPage'
 import FinalPreviewPage from './pages/FinalPreviewPage'
+import PublishPage from './pages/PublishPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
 function App() {
@@ -25,7 +26,7 @@ function App() {
         <Route path="digital-human" element={<DigitalHumanPage />} />
         <Route path="smart-editing" element={<SmartEditingPage />} />
         <Route path="final-preview" element={<FinalPreviewPage />} />
-        <Route path="publish" element={<PlaceholderPage title="一鍵發布" />} />
+        <Route path="publish" element={<PublishPage />} />
         <Route path="analytics" element={<PlaceholderPage title="數據分析" />} />
         <Route path="account" element={<PlaceholderPage title="帳號管理" />} />
         <Route path="mentor" element={<PlaceholderPage title="導師審核" />} />
