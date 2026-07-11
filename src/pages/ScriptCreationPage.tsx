@@ -209,7 +209,7 @@ export default function ScriptCreationPage() {
           </div>
           <div className="flex items-center gap-2">
             <span className="hidden md:inline-flex items-center gap-1 text-[11px] text-violet-600 bg-violet-50 border border-violet-200 rounded-full px-2.5 py-1">
-              <Link className="w-3 h-3" /> 對齊 script.schema
+              <Link className="w-3 h-3" /> 對齊創作契約
             </span>
             <button className="px-3.5 py-2 rounded-xl text-[13px] text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">保存草稿</button>
             <button

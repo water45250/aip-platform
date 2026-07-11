@@ -17,13 +17,13 @@ const TYPE_ICON: Record<string, any> = {
 
 // 流水線階段（成品預覽階段，全部已完成）
 const STAGES = [
-  { key: 'research', label: '選題挖掘', icon: Search, sub: 'research_brief', status: 'complete' },
-  { key: 'proposal', label: '方案提案', icon: Sparkles, sub: 'proposal_packet', status: 'complete' },
-  { key: 'script', label: '腳本創作', icon: FileText, sub: 'script', status: 'complete' },
-  { key: 'scene', label: '分鏡規劃', icon: Film, sub: 'scene_plan', status: 'complete' },
-  { key: 'assets', label: '素材生成', icon: Image, sub: 'asset_manifest', status: 'complete' },
-  { key: 'edit', label: '智能剪輯', icon: Scissors, sub: 'edit_decisions', status: 'complete' },
-  { key: 'compose', label: '合成渲染', icon: Cpu, sub: 'render_report', status: 'complete' },
+  { key: 'research', label: '選題挖掘', icon: Search, status: 'complete', desc: 'AI 已分析熱門趨勢與競品內容，完成選題策劃。' },
+  { key: 'proposal', label: '方案提案', icon: Sparkles, status: 'complete', desc: 'AI 已生成完整創作方案，包含風格定位與結構規劃。' },
+  { key: 'script', label: '腳本創作', icon: FileText, status: 'complete', desc: 'AI 已根據選題生成腳本大綱，支持在線編輯調整。' },
+  { key: 'scene', label: '分鏡規劃', icon: Film, status: 'complete', desc: 'AI 已完成分鏡設計，確定每個鏡頭的畫面與時長。' },
+  { key: 'assets', label: '素材生成', icon: Image, status: 'complete', desc: '已生成視頻、圖片、語音等全部素材，可預覽確認。' },
+  { key: 'edit', label: '智能剪輯', icon: Scissors, status: 'complete', desc: 'AI 已自動完成素材拼接、轉場與節奏優化。' },
+  { key: 'compose', label: '合成渲染', icon: Cpu, status: 'complete', desc: '已完成最終渲染，視頻準備就緒可供發布。' },
 ]
 
 // 示意性的剪輯 / 終審 / 渲染 / 發布數據（sampleProject 未含此類後製契約，僅作 UI 演示）
@@ -190,10 +190,10 @@ export default function FinalPreviewPage() {
           </div>
         </div>
 
-        {/* 流水線溯源 */}
+        {/* 製作進度 */}
         <div>
           <h2 className="text-[15px] font-bold text-gray-800 mb-3 flex items-center gap-2">
-            <Sparkles className="w-4 h-4 text-violet-500" /> 流水線溯源 · OpenMontage Agent-Driven
+            <Sparkles className="w-4 h-4 text-violet-500" /> 製作進度
           </h2>
           <div className="flex items-center gap-1 overflow-x-auto pb-1">
             {STAGES.map((st, i) => {
@@ -224,9 +224,8 @@ export default function FinalPreviewPage() {
                     <div className="text-[13px] font-semibold text-gray-800">{st.label}</div>
                     <StatusChip status={st.status} />
                   </div>
-                  <div className="text-[11px] text-gray-400 font-mono mb-2">{st.sub}.schema</div>
                   <div className="text-[12px] text-gray-600 leading-relaxed">
-                    對齊 {st.sub}.schema，本階段數據已由對應 Agent 生成並寫入契約。
+                    {st.desc}
                   </div>
                 </div>
               )
@@ -321,7 +320,7 @@ export default function FinalPreviewPage() {
         <div className="grid grid-cols-1 lg:grid-cols-3 gap-6">
           <div className="rounded-xl bg-white border border-gray-100 p-5">
             <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <Scissors className="w-4 h-4 text-violet-500" /> 剪輯決策 <span className="text-[11px] font-normal text-gray-400">edit_decisions.schema</span>
+              <Scissors className="w-4 h-4 text-violet-500" /> 剪輯決策
             </h3>
             <div className="text-[12px] text-gray-500 mb-2">剪輯段 {EDIT_CUTS.length} · 轉場 {EDIT_CUTS.filter((c) => c.transition !== 'cut').length} · 疊加 2</div>
             {EDIT_CUTS.map((c) => (
@@ -336,7 +335,7 @@ export default function FinalPreviewPage() {
 
           <div className="rounded-xl bg-white border border-gray-100 p-5">
             <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-violet-500" /> 終審 Final Review
+              <ShieldCheck className="w-4 h-4 text-violet-500" /> 終審確認
             </h3>
             <div className="mb-2 flex items-center gap-2">
               <StatusChip status="approved" />
@@ -354,7 +353,7 @@ export default function FinalPreviewPage() {
 
           <div className="rounded-xl bg-white border border-gray-100 p-5">
             <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-              <Cpu className="w-4 h-4 text-violet-500" /> 渲染報告 Render
+              <Cpu className="w-4 h-4 text-violet-500" /> 渲染報告
             </h3>
             <MetaRow k="渲染時長" v="42s" />
             <MetaRow k="輸出" v={project.outputs[0].format + ' · ' + project.outputs[0].resolution} />
@@ -369,7 +368,7 @@ export default function FinalPreviewPage() {
         {/* 發布記錄 */}
         <div className="rounded-xl bg-white border border-gray-100 p-5">
           <h3 className="text-sm font-bold text-gray-800 mb-3 flex items-center gap-2">
-            <Send className="w-4 h-4 text-violet-500" /> 發布記錄 Publish Log <span className="text-[11px] font-normal text-gray-400">publish_log.schema</span>
+            <Send className="w-4 h-4 text-violet-500" /> 發布記錄
           </h3>
           <div className="grid grid-cols-1 sm:grid-cols-3 gap-3">
             {PUBLISH_LOG.map((e) => (
@@ -389,13 +388,12 @@ export default function FinalPreviewPage() {
           </div>
         </div>
 
-        {/* 契約對齊說明 */}
+        {/* 導出提示 */}
         <div className="rounded-xl bg-violet-50 border border-violet-100 p-4 flex items-start gap-3">
           <Link className="w-5 h-5 text-violet-500 mt-0.5 flex-shrink-0" />
           <div className="text-[12.5px] text-gray-600 leading-relaxed">
-            <span className="font-medium text-gray-800">字段結構已對齊 OpenMontage Agent I/O Schema。</span>
-            本頁所有區塊的字段名、類型與枚舉均嚴格對應源倉庫{' '}
-            <span className="font-mono text-violet-600">schemas/artifacts/*.schema.json</span>。點擊右上角「導出工程 JSON」可取得符合契約的完整工程對象，便於直接接入真實 agent 後端。
+            <span className="font-medium text-gray-800">項目已準備就緒。</span>
+            所有製作階段已完成審核，視頻可直接發布至各平台。如需修改，可返回對應步驟重新編輯。
           </div>
         </div>
       </div>

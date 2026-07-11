@@ -86,7 +86,7 @@ export default function SmartEditingPage() {
               <div className="flex items-center gap-2 mb-4">
                 <Sparkles className="w-4 h-4 text-violet-500" />
                 <h2 className="text-sm font-bold text-gray-900">AI 智能建議</h2>
-                <span className="text-[11px] text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">OpenMontage edit</span>
+                <span className="text-[11px] text-violet-600 bg-violet-50 px-2 py-0.5 rounded-full">AI 智能剪輯</span>
               </div>
               <div className="grid grid-cols-2 gap-2.5">
                 {aiSuggestions.map((label, i) => {

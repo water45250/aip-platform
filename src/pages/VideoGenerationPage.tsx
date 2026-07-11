@@ -156,7 +156,7 @@ export default function VideoGenerationPage() {
             <section className="bg-white rounded-xl border border-gray-100 p-5">
               <div className="flex items-center justify-between mb-4">
                 <h2 className="text-[15px] font-semibold text-gray-800">素材生成</h2>
-                <span className="text-[11.5px] text-gray-400">Agent-Driven · OpenMontage assets</span>
+                <span className="text-[11.5px] text-gray-400">AI 自動生成素材</span>
               </div>
 
               {/* 參考連結 */}
@@ -431,9 +431,9 @@ export default function VideoGenerationPage() {
                 <button className="py-2 rounded-lg text-[12.5px] text-gray-600 border border-gray-200 hover:bg-gray-50 transition-colors">添加轉場</button>
                 <button className="py-2 rounded-lg text-[12.5px] text-white bg-gradient-to-r from-violet-600 to-purple-600 transition-all">一鍵合成</button>
               </div>
-              {/* OpenMontage 分鏡對齊 */}
+              {/* 分鏡對齊 */}
               <div className="mt-4 border-t border-gray-100 pt-3">
-                <div className="text-[11px] text-gray-400 mb-2">分鏡對齊 (OpenMontage sections) · {sampleProject.title}</div>
+                <div className="text-[11px] text-gray-400 mb-2">分鏡對齊 · {sampleProject.title}</div>
                 <div className="space-y-1.5 max-h-40 overflow-y-auto">
                   {sampleProject.sections.map((s) => (
                     <div key={s.id} className="flex items-center gap-2 text-[11.5px]">
