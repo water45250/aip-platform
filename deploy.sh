@@ -48,16 +48,21 @@ if [ -n "${SKIP_SMOKE:-}" ]; then
   echo "==> [4/5] 冒烟测试：已通过 SKIP_SMOKE 跳过"
 else
   echo "==> [4/5] 冒烟测试 (vite preview :${PREVIEW_PORT})"
-  npm run preview -- --port "$PREVIEW_PORT" >/tmp/aip_preview.log 2>&1 &
+  npm run preview -- --port "$PREVIEW_PORT" --host 127.0.0.1 >/tmp/aip_preview.log 2>&1 &
   PREVIEW_PID=$!
   # 等待预览服务就绪
   for _ in $(seq 1 30); do
     if curl -fsS "http://127.0.0.1:${PREVIEW_PORT}/" >/dev/null 2>&1; then break; fi
     sleep 0.5
   done
-  SMOKE_OK=0
-  if curl -fsS "http://127.0.0.1:${PREVIEW_PORT}/" | grep -q 'id="root"'; then
-    SMOKE_OK=1
+  SMOKE_OK=1
+  HTML=$(curl -fsS "http://127.0.0.1:${PREVIEW_PORT}/") || SMOKE_OK=0
+  # 首页需含 SPA 挂载点
+  echo "$HTML" | grep -q 'id="root"' || SMOKE_OK=0
+  # 主 JS bundle 需可访问（防止构建产物损坏/为空）
+  JS=$(echo "$HTML" | grep -oE 'assets/index-[A-Za-z0-9]+\.js' | head -1)
+  if [ -n "$JS" ] && ! curl -fsS "http://127.0.0.1:${PREVIEW_PORT}/$JS" >/dev/null 2>&1; then
+    SMOKE_OK=0
   fi
   # 收尾：务必关闭预览进程，避免端口/进程残留
   kill "$PREVIEW_PID" 2>/dev/null || true
