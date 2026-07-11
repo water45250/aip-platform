@@ -6,6 +6,7 @@ import TopicMiningPage from './pages/TopicMiningPage'
 import ScriptCreationPage from './pages/ScriptCreationPage'
 import VideoGenerationPage from './pages/VideoGenerationPage'
 import VoiceClonePage from './pages/VoiceClonePage'
+import DigitalHumanPage from './pages/DigitalHumanPage'
 import SmartEditingPage from './pages/SmartEditingPage'
 import FinalPreviewPage from './pages/FinalPreviewPage'
 import PlaceholderPage from './pages/PlaceholderPage'
@@ -21,6 +22,7 @@ function App() {
         <Route path="script-creation" element={<ScriptCreationPage />} />
         <Route path="video-generation" element={<VideoGenerationPage />} />
         <Route path="voice-clone" element={<VoiceClonePage />} />
+        <Route path="digital-human" element={<DigitalHumanPage />} />
         <Route path="smart-editing" element={<SmartEditingPage />} />
         <Route path="final-preview" element={<FinalPreviewPage />} />
         <Route path="publish" element={<PlaceholderPage title="一鍵發布" />} />

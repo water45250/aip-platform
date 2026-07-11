@@ -1,9 +1,11 @@
 import { useEffect, useMemo, useRef, useState } from 'react'
+import { Link } from 'react-router-dom'
 import type { CSSProperties } from 'react'
 import {
   BookOpen, Mic, Upload, Star, Type, Settings2, PlayCircle,
   Lightbulb, Download, Folder, PlusCircle, X, Play, Pause, CheckCircle2,
   Loader2, AudioLines, Volume2, Gauge,
+  Bot, Film, Coins,
 } from 'lucide-react'
 
 /* ============ 資料 ============ */
@@ -957,11 +959,32 @@ export default function VoiceClonePage() {
                     <CheckCircle2 className="w-8 h-8 text-emerald-500" />
                   </div>
                   <div className="text-[15px] font-semibold text-gray-800 mb-1">音色克隆成功！</div>
-                  <div className="text-[13px] text-gray-500 mb-4">您的專屬音色已就緒，可直接用於語音合成</div>
-                  <div className="bg-gray-50 rounded-xl p-3 inline-block text-left">
-                    <div className="text-[11.5px] text-gray-400">Voice ID</div>
-                    <div className="text-[13px] font-mono text-violet-600 font-semibold break-all">qwen-omni-vc-myvoice-voice-20260708xxxxx-abc123</div>
+                  <div className="text-[13px] text-gray-500 mb-4">您的專屬音色已就緒，接下來選擇創作路徑：</div>
+
+                  {/* Y型分叉引导 */}
+                  <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
+                    <Link to="/digital-human" className="group rounded-xl border-2 border-violet-200 bg-violet-50/40 p-4 hover:border-violet-400 hover:bg-violet-100/60 transition-all text-left">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Bot className="w-5 h-5 text-violet-600" />
+                        <span className="text-[14px] font-bold text-violet-700 group-hover:text-violet-800">數字人視頻製作</span>
+                      </div>
+                      <div className="text-[12px] text-gray-600 leading-snug">用克隆聲音驅動數字人，快速產出個人 IP 口播視頻與知識課程。</div>
+                      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-violet-500 font-medium">
+                        <Coins className="w-3.5 h-3.5" /> 按分鐘計費 · 主打場景
+                      </div>
+                    </Link>
+                    <Link to="/video-generation" className="group rounded-xl border-2 border-purple-200 bg-purple-50/40 p-4 hover:border-purple-400 hover:bg-purple-100/60 transition-all text-left">
+                      <div className="flex items-center gap-2 mb-2">
+                        <Film className="w-5 h-5 text-purple-600" />
+                        <span className="text-[14px] font-bold text-purple-700 group-hover:text-purple-800">OpenMontage 全套流程</span>
+                      </div>
+                      <div className="text-[12px] text-gray-600 leading-snug">走 AI 創意全流水線，自動生成多模態素材，適合動畫/複雜敘事。</div>
+                      <div className="mt-2 flex items-center gap-1.5 text-[11px] text-purple-500 font-medium">
+                        <Coins className="w-3.5 h-3.5" /> 按素材量計費 · 創意場景
+                      </div>
+                    </Link>
                   </div>
+                  <p className="text-[10.5px] text-gray-400 mt-3 text-center">兩條路獨立運行、生成內容完全不同，可同時進行</p>
                 </div>
               </div>
             )}
