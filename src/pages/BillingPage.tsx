@@ -201,10 +201,10 @@ export default function BillingPage() {
           })}
         </div>
 
-        {/* ===== Main Content：上排趋势(全宽)，下排构成(左)+套餐/使用/操作(右) ===== */}
-        <div className="space-y-5">
-          {/* 第一行：消费趋势 — 全宽 */}
-          <div className="rounded-xl bg-white border border-gray-100 p-5 space-y-4">
+        {/* ===== Main Content Grid：三列布局（趋势|构成|套餐），订单表跨左中两列 ===== */}
+        <div className="grid grid-cols-12 gap-5">
+          {/* 左列：消费趋势 — col-6 */}
+          <div className="col-span-6 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-[14.5px] font-bold text-gray-800">消費趨勢</h3>
               <select className="text-[12px] border border-gray-200 rounded-lg px-2.5 py-1.5 focus:outline-none focus:border-violet-400 bg-white appearance-none pr-7 bg-no-repeat bg-[right_6px_center]"
@@ -212,118 +212,112 @@ export default function BillingPage() {
                 <option>按月統計</option><option>按週統計</option>
               </select>
             </div>
-            <TrendLine data={TREND_VALUES} w={740} h={180} />
+            <TrendLine data={TREND_VALUES} w={480} h={180} />
           </div>
 
-          {/* 第二行：消费构成(左) + 套餐/使用/快速操作(右) */}
-          <div className="grid grid-cols-12 gap-5">
-            {/* 左列：消费构成 */}
-            <div className="col-span-5 rounded-xl bg-white border border-gray-100 p-5 space-y-3">
-              <h3 className="text-[13.5px] font-bold text-gray-800">消費構成（本月）</h3>
-              <div className="flex items-start gap-4">
-                <div className="relative shrink-0">
-                  <CostDonut segments={COST_BREAKDOWN}/>
-                  <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
-                    <div className="text-[11px] text-gray-400">總計</div>
-                    <div className="text-[17px] font-bold text-gray-900 leading-none">¥1,680.00</div>
-                  </div>
-                </div>
-                <div className="space-y-1.5 pt-1 flex-1">
-                  {COST_BREAKDOWN.map(c => (
-                    <div key={c.label} className="flex items-center gap-2 text-[12px]">
-                      <span className="w-2.5 h-2.5 rounded-full shrink-0" style={{backgroundColor:c.color}}/>
-                      <span className="text-gray-600 w-16">{c.label}</span>
-                      <span className="font-medium text-gray-800 w-8 text-right">{c.pct}%</span>
-                      <span className="text-gray-400 ml-auto">{c.amt}</span>
-                    </div>
-                  ))}
+          {/* 中列：消费构成 — col-3 */}
+          <div className="col-span-3 rounded-xl bg-white border border-gray-100 p-5 space-y-3">
+            <h3 className="text-[13.5px] font-bold text-gray-800">消費構成（本月）</h3>
+            <div className="flex flex-col items-center gap-3">
+              <div className="relative">
+                <CostDonut segments={COST_BREAKDOWN}/>
+                <div className="absolute inset-0 flex flex-col items-center justify-center pointer-events-none">
+                  <div className="text-[10px] text-gray-400">總計</div>
+                  <div className="text-[15px] font-bold text-gray-900 leading-none">¥1,680.00</div>
                 </div>
               </div>
-            </div>
-
-            {/* 右列：套餐 + 使用情况 + 快速操作 */}
-            <div className="col-span-7 space-y-5">
-              {/* 当前套餐 */}
-              <div className="rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 p-4 space-y-3">
-                <div className="flex items-center justify-between">
-                  <div className="flex items-center gap-2.5">
-                    <Crown className="w-5 h-5 text-violet-500"/>
-                    <div>
-                      <div className="text-[13.5px] font-bold text-gray-800">尊享會員（年付）</div>
-                      <div className="text-[11.5px] text-gray-500">有效期至 2025-12-31</div>
-                    </div>
+              <div className="space-y-1.5 w-full">
+                {COST_BREAKDOWN.map(c => (
+                  <div key={c.label} className="flex items-center gap-2 text-[11.5px]">
+                    <span className="w-2 h-2 rounded-full shrink-0" style={{backgroundColor:c.color}}/>
+                    <span className="text-gray-600 truncate">{c.label}</span>
+                    <span className="font-medium text-gray-800 ml-auto">{c.pct}%</span>
+                    <span className="text-gray-400 ml-1">{c.amt}</span>
                   </div>
-                  <button className="text-[11.5px] font-medium text-white bg-violet-600 rounded-lg px-3.5 py-1.5 hover:bg-violet-700">續費升級</button>
-                </div>
-                <div className="space-y-1.5 pt-1">
-                  {['每月 5,000 積分','無限次創本創作','高清數字人視頻導出','專屬客服授權','優先客服支持'].map(f=>(
-                    <div key={f} className="flex items-center gap-2 text-[11.5px] text-gray-600">
-                      <CheckCircle2 className="w-3.5 h-3.5 text-green-500 shrink-0"/>{f}
-                    </div>
-                  ))}
-                </div>
-                <button className="text-[11.5px] text-violet-600 hover:text-violet-700 font-medium flex items-center gap-0.5 mt-1">
-                  查看套餐詳情 <ArrowRight className="w-3.5 h-3.5"/>
-                </button>
-              </div>
-
-              {/* 本月使用情况 + 快速操作 并排 */}
-              <div className="grid grid-cols-2 gap-5">
-                <div className="rounded-xl bg-white border border-gray-100 p-4 space-y-3">
-                  <div className="flex items-center justify-between">
-                    <h3 className="text-[13px] font-bold text-gray-800">本月使用情況</h3>
-                    <span className="text-[11px] text-gray-400">(期限：05.01 ~ 05.31)</span>
-                  </div>
-                  {[
-                    { label: 'AI 積分', used: 2880, total: 5000, unit: '', pct: 57 },
-                    { label: '數字人生成時長', used: 220, total: 600, unit: '分鐘', pct: 37 },
-                    { label: '高清視頻導出', used: 38, total: 100, unit: '次', pct: 38 },
-                    { label: '云存儲空間', used: 12.6, total: 50, unit: 'GB', pct: 25 },
-                  ].map(item => (
-                    <div key={item.label}>
-                      <div className="flex items-center justify-between mb-1">
-                        <span className="text-[12px] text-gray-600">{item.label}</span>
-                        <span className="text-[11.5px] text-gray-400">已用 {item.used.toLocaleString()} / {item.total.toLocaleString()} {item.unit}<span className="ml-1.5 text-gray-600 font-medium">{item.pct}%</span></span>
-                      </div>
-                      <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500" style={{width:`${item.pct}%`}}/>
-                      </div>
-                    </div>
-                  ))}
-                  <button className="text-[11.5px] text-violet-600 hover:text-violet-700 font-medium flex items-center gap-0.5 mt-1">
-                    查看完整使用明細 <ArrowRight className="w-3.5 h-3.5"/>
-                  </button>
-                </div>
-
-                {/* 快速操作 */}
-                <div className="rounded-xl bg-white border border-gray-100 p-4">
-                  <h3 className="text-[13px] font-bold text-gray-800 mb-3">快速操作</h3>
-                  <div className="grid grid-cols-3 gap-3">
-                    {[
-                      { icon: Zap, label: '立即充值', color: 'from-violet-500 to-purple-500' },
-                      { icon: FileText, label: '開具發票', color: 'from-cyan-500 to-blue-500' },
-                      { icon: Ticket, label: '領取優惠券', color: 'from-pink-500 to-rose-500' },
-                    ].map(act => {
-                      const Icon = act.icon
-                      return (
-                        <button key={act.label} className="flex flex-col items-center gap-2 py-3 rounded-xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all group">
-                          <div className={'w-10 h-10 rounded-xl bg-gradient-to-br flex items-center justify-center ' + act.color}>
-                            <Icon className="w-5 h-5 text-white"/>
-                          </div>
-                          <span className="text-[11.5px] font-medium text-violet-600 group-hover:text-violet-700">{act.label}</span>
-                        </button>
-                      )
-                    })}
-                  </div>
-                </div>
+                ))}
               </div>
             </div>
           </div>
-        </div>
 
-        {/* ===== 訂單記錄 Table ===== */}
-        <div className="rounded-xl bg-white border border-gray-100 p-5 space-y-4">
-          <h3 className="text-[14.5px] font-bold text-gray-800">訂單記錄</h3>
+          {/* 右列：当前套餐 + 本月使用 + 快速操作 — col-3 堆叠 */}
+          <div className="col-span-3 space-y-5">
+            {/* 当前套餐 */}
+            <div className="rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <div className="flex items-center gap-2">
+                  <Crown className="w-4 h-4 text-violet-500"/>
+                  <div>
+                    <div className="text-[12.5px] font-bold text-gray-800">尊享會員（年付）</div>
+                    <div className="text-[10.5px] text-gray-500">有效期至 2025-12-31</div>
+                  </div>
+                </div>
+                <button className="text-[10.5px] font-medium text-white bg-violet-600 rounded-lg px-2.5 py-1 hover:bg-violet-700">續費升級</button>
+              </div>
+              <div className="space-y-1 pt-0.5">
+                {['每月 5,000 積分','無限次創作','高清數字人導出','專屬客服授權','優先客服支持'].map(f=>(
+                  <div key={f} className="flex items-center gap-1.5 text-[10.5px] text-gray-600">
+                    <CheckCircle2 className="w-3 h-3 text-green-500 shrink-0"/>{f}
+                  </div>
+                ))}
+              </div>
+              <button className="text-[10.5px] text-violet-600 hover:text-violet-700 font-medium flex items-center gap-0.5 mt-0.5">
+                查看套餐詳情 <ArrowRight className="w-3 h-3"/>
+              </button>
+            </div>
+
+            {/* 本月使用情况 */}
+            <div className="rounded-xl bg-white border border-gray-100 p-4 space-y-3">
+              <div className="flex items-center justify-between">
+                <h3 className="text-[12px] font-bold text-gray-800">本月使用情況</h3>
+                <span className="text-[10px] text-gray-400 whitespace-nowrap">(期限：05.01 ~ 05.31)</span>
+              </div>
+              {[
+                { label: 'AI 積分', used: 2880, total: 5000, unit: '', pct: 57 },
+                { label: '數字人時長', used: 220, total: 600, unit: '分鐘', pct: 37 },
+                { label: '高清導出', used: 38, total: 100, unit: '次', pct: 38 },
+                { label: '云存儲空間', used: 12.6, total: 50, unit: 'GB', pct: 25 },
+              ].map(item => (
+                <div key={item.label}>
+                  <div className="flex items-center justify-between mb-1">
+                    <span className="text-[11px] text-gray-600">{item.label}</span>
+                    <span className="text-[10.5px] text-gray-400 whitespace-nowrap">{item.pct}%</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500" style={{width:`${item.pct}%`}}/>
+                  </div>
+                </div>
+              ))}
+              <button className="text-[10.5px] text-violet-600 hover:text-violet-700 font-medium flex items-center gap-0.5 mt-0.5">
+                查看完整明細 <ArrowRight className="w-3 h-3"/>
+              </button>
+            </div>
+
+            {/* 快速操作 */}
+            <div className="rounded-xl bg-white border border-gray-100 p-4">
+              <h3 className="text-[12px] font-bold text-gray-800 mb-2.5">快速操作</h3>
+              <div className="grid grid-cols-3 gap-2">
+                {[
+                  { icon: Zap, label: '立即充值', color: 'from-violet-500 to-purple-500' },
+                  { icon: FileText, label: '開具發票', color: 'from-cyan-500 to-blue-500' },
+                  { icon: Ticket, label: '領取優惠券', color: 'from-pink-500 to-rose-500' },
+                ].map(act => {
+                  const Icon = act.icon
+                  return (
+                    <button key={act.label} className="flex flex-col items-center gap-1.5 py-2.5 rounded-xl border border-gray-100 hover:bg-gray-50 hover:border-gray-200 transition-all group">
+                      <div className={'w-9 h-9 rounded-lg bg-gradient-to-br flex items-center justify-center ' + act.color}>
+                        <Icon className="w-4 h-4 text-white"/>
+                      </div>
+                      <span className="text-[10.5px] font-medium text-violet-600 group-hover:text-violet-700">{act.label}</span>
+                    </button>
+                  )
+                })}
+              </div>
+            </div>
+          </div>
+
+          {/* ===== 訂單記錄 Table — 跨左中两列(col-9)，与右栏等高对齐 ===== */}
+          <div className="col-span-9 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
+            <h3 className="text-[14.5px] font-bold text-gray-800">訂單記錄</h3>
 
           {/* Filters */}
           <div className="flex items-center gap-3 flex-wrap">
@@ -396,6 +390,7 @@ export default function BillingPage() {
               </select>
             </div>
           </div>
+        </div>
         </div>
       </div>
     </div>
