@@ -1,6 +1,6 @@
 import {
   Home, Lightbulb, FileText, Mic, MonitorPlay, Scissors, Eye, Bot,
-  Send, BarChart3, User, Award, LayoutGrid, FolderPlus,
+  Send, BarChart3, User, Award, LayoutGrid, FolderPlus, Receipt,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -42,7 +42,13 @@ export const navSections: NavSection[] = [
       { label: '數據分析', path: '/analytics', icon: BarChart3 },
     ],
   },
-  { items: [{ label: '帳號管理', path: '/account', icon: User }] },
+  {
+    header: '帳號與賬單',
+    items: [
+      { label: '帳號管理', path: '/account', icon: User },
+      { label: '訂單計費', path: '/billing', icon: Receipt },
+    ],
+  },
   {
     header: '增值服務',
     items: [
