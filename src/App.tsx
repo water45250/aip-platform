@@ -11,6 +11,7 @@ import SmartEditingPage from './pages/SmartEditingPage'
 import FinalPreviewPage from './pages/FinalPreviewPage'
 import PublishPage from './pages/PublishPage'
 import AnalyticsPage from './pages/AnalyticsPage'
+import AccountPage from './pages/AccountPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
 function App() {
@@ -29,7 +30,7 @@ function App() {
         <Route path="final-preview" element={<FinalPreviewPage />} />
         <Route path="publish" element={<PublishPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
-        <Route path="account" element={<PlaceholderPage title="帳號管理" />} />
+        <Route path="account" element={<AccountPage />} />
         <Route path="mentor" element={<PlaceholderPage title="導師審核" />} />
         <Route path="templates" element={<PlaceholderPage title="模板中心" />} />
         <Route path="assets" element={<PlaceholderPage title="素材中心" />} />
