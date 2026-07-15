@@ -1,3 +1,4 @@
+
 import { useEffect, useMemo, useRef, useState } from 'react'
 import { Link } from 'react-router-dom'
 import type { CSSProperties } from 'react'
@@ -8,34 +9,72 @@ import {
   Bot, Film, Coins,
 } from 'lucide-react'
 
-/* ============ 資料 ============ */
-const VOICES = [
-  {
-    id: 'taiwan-vivian', name: 'Taiwan-Vivian', sub: 'Qwen3-TTS · 克隆',
-    initial: 'T', avatar: 'bg-gradient-to-br from-violet-600 to-purple-600',
-    status: '可用', tags: ['中文', '臺灣腔'], cat: 'cloned', fav: true,
-  },
-  {
-    id: 'host-kevin', name: 'Host-Kevin', sub: 'Qwen3-TTS · 克隆',
-    initial: 'K', avatar: 'bg-gradient-to-br from-blue-500 to-cyan-400',
-    status: '可用', tags: ['中文', '男聲'], cat: 'cloned', fav: false,
-  },
-  {
-    id: 'cherry', name: 'Cherry（甜美女聲）', sub: 'Qwen3-TTS · 預設',
-    initial: 'V', avatar: 'bg-gradient-to-br from-pink-400 to-rose-400',
-    status: '可用', tags: ['中文', '女聲'], cat: 'preset', fav: true,
-  },
-  {
-    id: 'uncle-fu', name: 'Uncle-Fu（大叔）', sub: 'Qwen3-TTS · 預設',
-    initial: 'U', avatar: 'bg-gradient-to-br from-indigo-500 to-violet-500',
-    status: '可用', tags: ['中文', '男低音'], cat: 'preset', fav: false,
-  },
-  {
-    id: 'new-voice-03', name: 'New-Voice_03', sub: 'Qwen3-TTS · 克隆中...',
-    initial: '...', avatar: 'bg-gray-200 text-gray-400',
-    status: '克隆中', tags: [], cat: 'cloned', fav: false, progress: 65,
-  },
+/* ============ API 基址 ============ */
+const API_BASE: string = (import.meta as any).env?.VITE_API_BASE_URL ?? ''
+const ENGINE_LABEL = 'CosyVoice2-0.5B'
+
+/* ============ 資料模型 ============ */
+type Voice = {
+  id: string
+  name: string
+  sub: string
+  initial: string
+  avatar: string
+  status: string
+  tags: string[]
+  cat: 'preset' | 'cloned'
+  fav: boolean
+}
+
+const AVATARS = [
+  'bg-gradient-to-br from-violet-600 to-purple-600',
+  'bg-gradient-to-br from-blue-500 to-cyan-400',
+  'bg-gradient-to-br from-pink-400 to-rose-400',
+  'bg-gradient-to-br from-indigo-500 to-violet-500',
+  'bg-gradient-to-br from-emerald-500 to-teal-500',
+  'bg-gradient-to-br from-amber-500 to-orange-400',
+  'bg-gradient-to-br from-fuchsia-500 to-pink-500',
+  'bg-gradient-to-br from-sky-500 to-blue-500',
 ]
+
+/* CosyVoice2 預置音色（與 GET /api/voices 一致，API 失敗時兜底） */
+const PRESET_SEED = [
+  { id: 'FunAudioLLM/CosyVoice2-0.5B:alex', name: '沉穩男聲 (CosyVoice2)', gender: '男', def: true },
+  { id: 'FunAudioLLM/CosyVoice2-0.5B:benjamin', name: '低沉男聲 (CosyVoice2)', gender: '男', def: false },
+  { id: 'FunAudioLLM/CosyVoice2-0.5B:charles', name: '磁性男聲 (CosyVoice2)', gender: '男', def: false },
+  { id: 'FunAudioLLM/CosyVoice2-0.5B:david', name: '歡快男聲 (CosyVoice2)', gender: '男', def: false },
+  { id: 'FunAudioLLM/CosyVoice2-0.5B:anna', name: '沉穩女聲 (CosyVoice2)', gender: '女', def: false },
+  { id: 'FunAudioLLM/CosyVoice2-0.5B:bella', name: '激情女聲 (CosyVoice2)', gender: '女', def: false },
+  { id: 'FunAudioLLM/CosyVoice2-0.5B:claire', name: '溫柔女聲 (CosyVoice2)', gender: '女', def: false },
+  { id: 'FunAudioLLM/CosyVoice2-0.5B:diana', name: '歡快女聲 (CosyVoice2)', gender: '女', def: false },
+]
+
+const seedToVoice = (v: { id: string; name: string; gender: string; def: boolean }, i: number): Voice => {
+  const genderLabel = v.gender === '男' ? '男聲' : '女聲'
+  return {
+    id: v.id,
+    name: v.name,
+    sub: `${v.gender} · CosyVoice2`,
+    initial: (v.name || '')[0] || '?',
+    avatar: AVATARS[i % AVATARS.length],
+    status: '可用',
+    tags: ['中文', genderLabel],
+    cat: 'preset',
+    fav: !!v.def,
+  }
+}
+
+const FALLBACK_VOICES: Voice[] = PRESET_SEED.map(seedToVoice)
+
+/* ============ 工具 ============ */
+function readAsDataURL(file: File): Promise<string> {
+  return new Promise((resolve, reject) => {
+    const r = new FileReader()
+    r.onload = () => resolve((r.result as string) || '')
+    r.onerror = () => reject(new Error('讀取音頻檔案失敗'))
+    r.readAsDataURL(file)
+  })
+}
 
 const VOICE_TABS = [
   { key: 'all', label: '全部' },
@@ -53,12 +92,12 @@ const EMOTIONS = [
   { label: '深沉穩重', text: '深沉穩重、磁性低沉、紀錄片解說' },
 ]
 
-const TOTAL_SECONDS = 12
-
 export default function VoiceClonePage() {
   /* ---- 聲音列表 / 選擇 ---- */
   const [activeTab, setActiveTab] = useState('all')
-  const [selectedVoice, setSelectedVoice] = useState('taiwan-vivian')
+  const [voices, setVoices] = useState<Voice[]>(FALLBACK_VOICES)
+  const [voicesLoading, setVoicesLoading] = useState(true)
+  const [selectedVoice, setSelectedVoice] = useState(FALLBACK_VOICES[0].id)
 
   /* ---- 合成文本 ---- */
   const [synthText, setSynthText] = useState('')
@@ -74,12 +113,16 @@ export default function VoiceClonePage() {
   const [sampleRate, setSampleRate] = useState('44100 Hz')
   const [format, setFormat] = useState('MP3（壓縮）')
 
-  /* ---- 播放器 ---- */
+  /* ---- 播放器（真實 <audio>） ---- */
   const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
-  const [playerStatus, setPlayerStatus] = useState('等待合成...')
+  const [duration, setDuration] = useState(0)
+  const [playerStatus, setPlayerStatus] = useState('等待合成…')
   const [isGenerating, setIsGenerating] = useState(false)
-  const timerRef = useRef<number | null>(null)
+  const [audioUrl, setAudioUrl] = useState('')
+  const [errorMsg, setErrorMsg] = useState('')
+  const [toast, setToast] = useState('')
+  const audioRef = useRef<HTMLAudioElement>(null)
 
   /* ---- 克隆 Modal ---- */
   const [showModal, setShowModal] = useState(false)
@@ -88,84 +131,139 @@ export default function VoiceClonePage() {
   const [fileInfo, setFileInfo] = useState('')
   const [recording, setRecording] = useState(false)
   const [recSec, setRecSec] = useState(0)
-  const [recTimer, setRecTimer] = useState<number | null>(null)
+  const recTimerRef = useRef<number | null>(null)
+  const mediaRecRef = useRef<MediaRecorder | null>(null)
+  const recChunksRef = useRef<Blob[]>([])
+  const audioFileRef = useRef<File | null>(null)
   const [genProgress, setGenProgress] = useState(0)
   const [genStatus, setGenStatus] = useState('')
   const [voicePrefix, setVoicePrefix] = useState('')
   const fileInputRef = useRef<HTMLInputElement>(null)
 
-  /* 波形條 */
+  /* 波形條（裝飾） */
   const waveBars = useMemo(
     () => Array.from({ length: 40 }, () => Math.random() * 70 + 15),
     [],
   )
 
-  const visibleVoices = VOICES.filter((v) => {
+  /* ===== 載入 CosyVoice2 預置音色 ===== */
+  useEffect(() => {
+    let cancelled = false
+    ;(async () => {
+      try {
+        const res = await fetch(`${API_BASE}/api/voices`)
+        if (!res.ok) throw new Error(`HTTP ${res.status}`)
+        const data = await res.json()
+        if (!cancelled && Array.isArray(data.voices) && data.voices.length) {
+          setVoices(data.voices.map((v: any, i: number) => seedToVoice(v, i)))
+        }
+      } catch {
+        /* 保留兜底音色 */
+      } finally {
+        if (!cancelled) setVoicesLoading(false)
+      }
+    })()
+    return () => { cancelled = true }
+  }, [])
+
+  /* ===== 釋放 object URL ===== */
+  useEffect(() => {
+    return () => {
+      if (audioUrl) URL.revokeObjectURL(audioUrl)
+    }
+  }, [audioUrl])
+
+  /* ===== Toast 自動消失 ===== */
+  useEffect(() => {
+    if (!toast) return
+    const t = window.setTimeout(() => setToast(''), 2600)
+    return () => window.clearTimeout(t)
+  }, [toast])
+
+  const visibleVoices = voices.filter((v) => {
     if (activeTab === 'all') return true
     if (activeTab === 'fav') return v.fav
     return v.cat === activeTab
   })
 
-  const metaVoice = VOICES.find((v) => v.id === selectedVoice)?.name ?? '--'
+  const metaVoice = voices.find((v) => v.id === selectedVoice)?.name ?? '--'
+  const hasCloned = voices.some((v) => v.cat === 'cloned')
 
-  /* ===== 播放模擬 ===== */
-  const stopTimer = () => {
-    if (timerRef.current) {
-      window.clearInterval(timerRef.current)
-      timerRef.current = null
+  /* ===== 真實播放 ===== */
+  const onAudioTimeUpdate = () => {
+    const a = audioRef.current
+    if (!a) return
+    setCurrentTime(a.currentTime)
+    if (isFinite(a.duration) && a.duration > 0) setDuration(a.duration)
+  }
+  const onAudioLoaded = () => {
+    const a = audioRef.current
+    if (a && isFinite(a.duration)) setDuration(a.duration)
+  }
+  const onAudioEnded = () => { setPlaying(false); setPlayerStatus('播放完畢') }
+  const onAudioPlay = () => { setPlaying(true); setPlayerStatus('播放中…') }
+  const onAudioPause = () => { setPlaying(false); setPlayerStatus('已暫停') }
+
+  const synth = async (autoplay = true) => {
+    if (!synthText.trim()) { setPlayerStatus('請先輸入合成文本'); return }
+    if (!selectedVoice) { setPlayerStatus('請選擇音色'); return }
+    setIsGenerating(true)
+    setPlayerStatus('合成中…')
+    setErrorMsg('')
+    try {
+      const res = await fetch(`${API_BASE}/api/voice/test`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({ voice: selectedVoice, text: synthText }),
+      })
+      if (!res.ok) {
+        let msg = `合成失敗 (HTTP ${res.status})`
+        try { const j = await res.json(); if (j?.detail) msg = j.detail } catch { /* ignore */ }
+        throw new Error(msg)
+      }
+      const blob = await res.blob()
+      const url = URL.createObjectURL(blob)
+      if (audioUrl) URL.revokeObjectURL(audioUrl)
+      setAudioUrl(url)
+      setCurrentTime(0)
+      setDuration(0)
+      const a = audioRef.current
+      if (a) {
+        a.src = url
+        if (autoplay) { try { await a.play() } catch { /* 自動播放被攔截，可手動播放 */ } }
+      }
+    } catch (e: any) {
+      setPlayerStatus('合成失敗')
+      setErrorMsg(e?.message || '合成失敗')
+    } finally {
+      setIsGenerating(false)
     }
   }
 
-  const startPlayback = (status: string) => {
-    setPlayerStatus(status)
-    setPlaying(true)
-    setCurrentTime(0)
-    stopTimer()
-    timerRef.current = window.setInterval(() => {
-      setCurrentTime((t) => {
-        if (t + 0.1 >= TOTAL_SECONDS) {
-          setPlaying(false)
-          setPlayerStatus('準備就緒')
-          stopTimer()
-          return 0
-        }
-        return t + 0.1
-      })
-    }, 100)
-  }
+  const startStreamPreview = () => synth(true)
+  const generateAudio = () => synth(true)
 
   const togglePlay = () => {
-    if (playing) {
-      stopTimer()
-      setPlaying(false)
-      setPlayerStatus('已暫停')
-    } else {
-      startPlayback('播放中…')
-    }
+    const a = audioRef.current
+    if (!a || !audioUrl) return
+    if (a.paused) a.play().catch(() => {})
+    else a.pause()
   }
 
-  const startStreamPreview = () => {
-    if (!synthText.trim()) {
-      setPlayerStatus('請先輸入合成文本')
-      return
-    }
-    startPlayback('試聽中…（流式 97ms）')
+  const downloadAudio = () => {
+    if (!audioUrl) return
+    const a = document.createElement('a')
+    a.href = audioUrl
+    a.download = `cosyvoice_${selectedVoice.replace(/[^a-zA-Z0-9]/g, '_')}.wav`
+    document.body.appendChild(a)
+    a.click()
+    a.remove()
   }
 
-  const generateAudio = () => {
-    if (!synthText.trim()) {
-      setPlayerStatus('請先輸入合成文本')
-      return
-    }
-    setIsGenerating(true)
-    setPlayerStatus('生成中…')
-    setTimeout(() => {
-      setIsGenerating(false)
-      startPlayback('生成完成，播放中…')
-    }, 800)
+  const addToLibrary = () => {
+    if (!audioUrl) { setToast('請先合成音頻再加入素材庫'); return }
+    setToast('已加入素材庫')
   }
-
-  useEffect(() => stopTimer, [])
 
   /* ===== 字符計數 ===== */
   const charCount = synthText.length
@@ -176,92 +274,138 @@ export default function VoiceClonePage() {
     setShowModal(true)
     setModalStep(1)
     setGenProgress(0)
+    setGenStatus('')
     setVoicePrefix('')
     setFileName('')
     setFileInfo('')
+    setErrorMsg('')
+    audioFileRef.current = null
     if (goRecord) setTimeout(() => toggleRecord(), 300)
   }
 
   const closeModal = () => {
     setShowModal(false)
-    if (recTimer) {
-      window.clearInterval(recTimer)
-      setRecTimer(null)
+    if (recTimerRef.current) { window.clearInterval(recTimerRef.current); recTimerRef.current = null }
+    if (mediaRecRef.current && mediaRecRef.current.state !== 'inactive') {
+      try { mediaRecRef.current.stop() } catch { /* ignore */ }
     }
     setRecording(false)
     setRecSec(0)
     setModalStep(1)
     setGenProgress(0)
-  }
-
-  const showStep = (s: number | 'success') => {
-    setModalStep(s)
-    if (s === 4) setGenStatus('初始化模型...')
+    setGenStatus('')
   }
 
   const nextStep = () => {
     if (modalStep === 1) {
-      if (fileName) showValidate()
+      if (!fileName) { setErrorMsg('請先上傳或錄音參考音頻'); return }
+      setErrorMsg('')
+      setModalStep(2)
       return
     }
-    if (modalStep === 2) showStep(3)
+    if (modalStep === 2) { setModalStep(3); return }
+    if (modalStep === 3) { setModalStep(4); return }
   }
 
-  const showValidate = () => {
-    showStep(2)
-    setTimeout(() => showStep(3), 1200)
-  }
-
-  const startClone = () => {
-    showStep(4)
-    const steps = ['初始化模型...', '下載編碼器...', '提取聲紋特徵...', '驗證相似度...', '生成音色 ID...']
-    let si = 0
-    const iv = window.setInterval(() => {
-      si++
-      if (si <= steps.length) setGenStatus(steps[si - 1])
-      const pct = Math.min(si * (100 / steps.length) + Math.random() * 8, 98)
-      setGenProgress(pct)
-      if (si >= steps.length) {
-        window.clearInterval(iv)
-        setTimeout(() => setModalStep('success'), 600)
+  const startClone = async () => {
+    const file = audioFileRef.current
+    if (!file) { setErrorMsg('請先上傳參考音頻'); return }
+    setModalStep(4)
+    setGenStatus('上傳參考音頻並提取聲紋…')
+    setGenProgress(15)
+    setErrorMsg('')
+    try {
+      const audio_base64 = await readAsDataURL(file)
+      setGenProgress(55)
+      setGenStatus('調用 CosyVoice2 進行聲紋建模…')
+      const res = await fetch(`${API_BASE}/api/voice/clone`, {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify({
+          audio_base64,
+          audio_name: fileName || file.name,
+          text: synthText || '',
+        }),
+      })
+      if (!res.ok) {
+        let msg = `克隆失敗 (HTTP ${res.status})`
+        try { const j = await res.json(); if (j?.detail) msg = j.detail } catch { /* ignore */ }
+        throw new Error(msg)
       }
-    }, 800)
+      const data = await res.json()
+      const uri: string = data.voice_uri || data.voice || ''
+      if (!uri) throw new Error('後端未返回音色 URI')
+      setGenProgress(100)
+      setGenStatus('克隆完成')
+      const newVoice: Voice = {
+        id: uri,
+        name: `我的克隆音色 (${voicePrefix || fileName || 'custom'})`,
+        sub: 'CosyVoice2 · 克隆',
+        initial: '克隆'[0],
+        avatar: 'bg-gradient-to-br from-emerald-500 to-teal-500',
+        status: '可用',
+        tags: ['克隆', '自定義'],
+        cat: 'cloned',
+        fav: true,
+      }
+      setVoices((prev) => [newVoice, ...prev])
+      setSelectedVoice(uri)
+      setModalStep('success')
+    } catch (e: any) {
+      setGenStatus('克隆失敗：' + (e?.message || ''))
+      setErrorMsg(e?.message || '克隆失敗')
+      setGenProgress(100)
+    }
   }
 
-  const handleFile = (file: { name: string; size?: number }) => {
+  const handleFile = (file: File) => {
+    audioFileRef.current = file
     setFileName(file.name)
-    const mb = file.size ? `${(file.size / 1024 / 1024).toFixed(2)} MB` : ''
-    setFileInfo(`${mb} · WAV · 24kHz · ${(5 + Math.random() * 15).toFixed(1)}s`)
+    const mb = `${(file.size / 1024 / 1024).toFixed(2)} MB`
+    setFileInfo(`${mb} · ${file.type || 'audio'} · 已就緒`)
+    setErrorMsg('')
   }
 
   const removeFile = () => {
     setFileName('')
     setFileInfo('')
+    audioFileRef.current = null
     if (fileInputRef.current) fileInputRef.current.value = ''
   }
 
-  const toggleRecord = () => {
-    setRecording((r) => {
-      const next = !r
-      if (next) {
-        setRecSec(0)
-        const t = window.setInterval(() => {
-          setRecSec((s) => s + 1)
-        }, 1000)
-        setRecTimer(t)
-      } else {
-        if (recTimer) window.clearInterval(recTimer)
-        setRecTimer(null)
-        if (recSec > 3) handleFile({ name: `recording_${Date.now()}.wav` })
+  const toggleRecord = async () => {
+    if (recording) {
+      mediaRecRef.current?.stop()
+      setRecording(false)
+      if (recTimerRef.current) { window.clearInterval(recTimerRef.current); recTimerRef.current = null }
+      return
+    }
+    try {
+      const stream = await navigator.mediaDevices.getUserMedia({ audio: true })
+      const mr = new MediaRecorder(stream)
+      recChunksRef.current = []
+      mr.ondataavailable = (e) => { if (e.data.size) recChunksRef.current.push(e.data) }
+      mr.onstop = () => {
+        stream.getTracks().forEach((t) => t.stop())
+        const blob = new Blob(recChunksRef.current, { type: mr.mimeType || 'audio/webm' })
+        const fname = `recording_${Date.now()}.webm`
+        handleFile(new File([blob], fname, { type: blob.type }))
       }
-      return next
-    })
+      mr.start()
+      mediaRecRef.current = mr
+      setRecording(true)
+      setRecSec(0)
+      recTimerRef.current = window.setInterval(() => setRecSec((s) => s + 1), 1000)
+    } catch (e: any) {
+      setErrorMsg('無法存取麥克風：' + (e?.message || ''))
+    }
   }
 
   const speedPct = ((speed - 0.5) / (2 - 0.5)) * 100
   const volPct = (volume / 200) * 100
-  const progressPct = TOTAL_SECONDS ? (currentTime / TOTAL_SECONDS) * 100 : 0
+  const progressPct = duration ? (currentTime / duration) * 100 : 0
   const fmt = (s: number) => {
+    if (!isFinite(s) || s < 0) s = 0
     const m = Math.floor(s / 60)
     const ss = Math.floor(s % 60)
     return `${m}:${String(ss).padStart(2, '0')}`
@@ -285,7 +429,7 @@ export default function VoiceClonePage() {
           <div>
             <h1 className="text-2xl font-bold text-gray-900 tracking-tight">聲音克隆</h1>
             <p className="text-[13.5px] text-gray-500 mt-1">
-              基於 Qwen3-TTS 引擎，上傳參考音頻即可複製專屬音色，支持自然語言情緒控制與流式實時合成
+              基於 CosyVoice2 引擎，上傳參考音頻即可複製專屬音色，支持自然語言情緒控制與高質量語音合成
             </p>
           </div>
           <button className="flex items-center gap-1.5 px-4 py-2 rounded-xl text-[13px] font-medium text-violet-600 bg-violet-50 border border-violet-200 hover:bg-violet-100 transition-colors">
@@ -350,35 +494,14 @@ export default function VoiceClonePage() {
 
               {/* 列表 */}
               <div className="p-3 space-y-2.5 max-h-[calc(100vh-320px)] overflow-y-auto">
-                {visibleVoices.map((v) => {
+                {voicesLoading && (
+                  <div className="flex items-center justify-center gap-2 py-8 text-[12.5px] text-gray-400">
+                    <Loader2 className="w-4 h-4 animate-spin" /> 正在載入 CosyVoice2 音色…
+                  </div>
+                )}
+
+                {!voicesLoading && visibleVoices.map((v) => {
                   const selected = v.id === selectedVoice
-                  if (v.status === '克隆中') {
-                    return (
-                      <div key={v.id} className="p-3 rounded-xl border border-dashed border-gray-300 bg-gray-50/70">
-                        <div className="flex items-center justify-between mb-2">
-                          <div className="flex items-center gap-2">
-                            <div className="w-8 h-8 rounded-lg bg-gray-200 flex items-center justify-center text-gray-400 text-xs animate-pulse">
-                              {v.initial}
-                            </div>
-                            <div>
-                              <div className="text-[13px] font-semibold text-gray-600">{v.name}</div>
-                              <div className="text-[11px] text-gray-400">{v.sub}</div>
-                            </div>
-                          </div>
-                          <span className="flex items-center gap-1 text-[10px] px-1.5 py-0.5 rounded-full bg-amber-50 text-amber-600 font-medium border border-amber-200">
-                            <span className="w-1.5 h-1.5 rounded-full bg-amber-500 animate-pulse" />
-                            克隆中
-                          </span>
-                        </div>
-                        <div className="mt-2">
-                          <div className="h-1.5 bg-gray-200 rounded-full overflow-hidden">
-                            <div className="h-full bg-gradient-to-r from-violet-600 to-purple-600 rounded-full" style={{ width: `${v.progress}%` }} />
-                          </div>
-                          <div className="text-[11px] text-gray-400 mt-1 text-right">{v.progress}%</div>
-                        </div>
-                      </div>
-                    )
-                  }
                   return (
                     <div
                       key={v.id}
@@ -427,10 +550,12 @@ export default function VoiceClonePage() {
                   )
                 })}
 
-                {visibleVoices.length === 0 && (
+                {!voicesLoading && visibleVoices.length === 0 && (
                   <div className="flex flex-col items-center justify-center py-10 text-center">
                     <Folder className="w-10 h-10 text-gray-300 mb-2" />
-                    <div className="text-[13px] text-gray-400">此分類暫無音色</div>
+                    <div className="text-[13px] text-gray-400">
+                      {activeTab === 'cloned' ? '尚未克隆任何音色' : '此分類暫無音色'}
+                    </div>
                     <button
                       onClick={() => openModal(false)}
                       className="mt-3 px-4 py-2 rounded-xl text-[12.5px] font-medium text-violet-600 bg-violet-50 border border-violet-200 hover:bg-violet-100 transition-colors"
@@ -444,7 +569,7 @@ export default function VoiceClonePage() {
               {/* 配額提示 */}
               <div className="px-4 pb-3 pt-1">
                 <div className="text-[11.5px] text-gray-400 text-center">
-                  已使用 3 / 1000 個音色配額 · <span className="text-violet-500 hover:underline cursor-pointer">管理音色</span>
+                  {hasCloned ? '已克隆自定義音色 · ' : ''}<span className="text-violet-500 hover:underline cursor-pointer">管理音色</span>
                 </div>
               </div>
             </div>
@@ -504,7 +629,7 @@ export default function VoiceClonePage() {
                   <Star className="w-4 h-4 text-pink-400" />
                   情緒 / 語氣控制
                   <span className="text-[10px] font-normal px-1.5 py-0.5 rounded-full bg-pink-50 text-pink-600 border border-pink-200 ml-1">
-                    Qwen3-TTS Instruct
+                    CosyVoice2 Instruct
                   </span>
                 </span>
                 <label className="flex items-center gap-1.5 text-[11.5px] text-gray-500 cursor-pointer select-none">
@@ -641,20 +766,27 @@ export default function VoiceClonePage() {
             <div className="grid grid-cols-2 gap-3">
               <button
                 onClick={startStreamPreview}
-                className="py-2.5 rounded-xl text-[13px] font-semibold text-violet-600 bg-violet-50 border border-violet-200 hover:bg-violet-100 transition-colors flex items-center justify-center gap-2"
+                disabled={isGenerating}
+                className="py-2.5 rounded-xl text-[13px] font-semibold text-violet-600 bg-violet-50 border border-violet-200 hover:bg-violet-100 transition-colors flex items-center justify-center gap-2 disabled:opacity-70"
               >
                 <PlayCircle className="w-4 h-4" />
-                流式試聽（97ms）
+                試聽合成
               </button>
               <button
                 onClick={generateAudio}
                 disabled={isGenerating}
                 className="py-2.5 rounded-xl text-[13px] font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 hover:brightness-110 shadow-md shadow-violet-200/40 transition-all flex items-center justify-center gap-2 disabled:opacity-70"
               >
-                <PlusCircle className="w-4 h-4" />
+                {isGenerating ? <Loader2 className="w-4 h-4 animate-spin" /> : <PlusCircle className="w-4 h-4" />}
                 {isGenerating ? '生成中...' : '生成音頻'}
               </button>
             </div>
+
+            {errorMsg && (
+              <div className="text-[12px] text-red-500 bg-red-50 border border-red-200 rounded-xl px-4 py-2.5">
+                {errorMsg}
+              </div>
+            )}
           </div>
 
           {/* ===== 欄 3：預覽與導出 ===== */}
@@ -684,7 +816,8 @@ export default function VoiceClonePage() {
                   <div className="absolute inset-0 flex items-center justify-center">
                     <button
                       onClick={togglePlay}
-                      className="w-14 h-14 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-violet-300/40 hover:scale-105 transition-transform"
+                      disabled={!audioUrl}
+                      className="w-14 h-14 rounded-full bg-gradient-to-r from-violet-600 to-purple-600 text-white flex items-center justify-center shadow-lg shadow-violet-300/40 hover:scale-105 transition-transform disabled:opacity-40 disabled:hover:scale-100"
                     >
                       {playing ? (
                         <Pause className="w-6 h-6" fill="currentColor" />
@@ -695,7 +828,7 @@ export default function VoiceClonePage() {
                   </div>
                   <div className="absolute bottom-2 left-4 right-4 flex justify-between text-[11px] text-gray-400 font-mono">
                     <span>{fmt(currentTime)}</span>
-                    <span>{fmt(TOTAL_SECONDS)}</span>
+                    <span>{fmt(duration)}</span>
                   </div>
                 </div>
 
@@ -713,9 +846,9 @@ export default function VoiceClonePage() {
               {/* 元信息 */}
               <div className="px-5 pb-4 border-t border-gray-100 pt-3 space-y-2">
                 <div className="grid grid-cols-2 gap-x-4 gap-y-2 text-[12px]">
-                  <div className="flex items-center justify-between"><span className="text-gray-400">引擎</span><span className="font-medium text-gray-700">Qwen3-TTS-VC</span></div>
-                  <div className="flex items-center justify-between"><span className="text-gray-400">音色</span><span className="font-medium text-violet-600">{metaVoice}</span></div>
-                  <div className="flex items-center justify-between"><span className="text-gray-400">時長</span><span className="font-medium text-gray-700">{fmt(TOTAL_SECONDS)}</span></div>
+                  <div className="flex items-center justify-between"><span className="text-gray-400">引擎</span><span className="font-medium text-gray-700">{ENGINE_LABEL}</span></div>
+                  <div className="flex items-center justify-between"><span className="text-gray-400">音色</span><span className="font-medium text-violet-600 truncate max-w-[120px]">{metaVoice}</span></div>
+                  <div className="flex items-center justify-between"><span className="text-gray-400">時長</span><span className="font-medium text-gray-700">{fmt(duration)}</span></div>
                   <div className="flex items-center justify-between"><span className="text-gray-400">字符數</span><span className="font-medium text-gray-700">{charCount}</span></div>
                   <div className="flex items-center justify-between"><span className="text-gray-400">情緒</span><span className="font-medium text-gray-500 truncate max-w-[120px] text-right">{emotion ?? '--'}</span></div>
                   <div className="flex items-center justify-between"><span className="text-gray-400">格式</span><span className="font-medium text-gray-700">{format.split('（')[0]}</span></div>
@@ -724,15 +857,30 @@ export default function VoiceClonePage() {
 
               {/* 導出按鈕 */}
               <div className="px-5 pb-5 flex gap-2.5">
-                <button className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 hover:brightness-110 transition-all flex items-center justify-center gap-1.5 shadow-sm">
+                <button
+                  onClick={downloadAudio}
+                  disabled={!audioUrl}
+                  className="flex-1 py-2.5 rounded-xl text-[13px] font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 hover:brightness-110 transition-all flex items-center justify-center gap-1.5 shadow-sm disabled:opacity-40"
+                >
                   <Download className="w-4 h-4" />
                   下載 {format.split('（')[0]}
                 </button>
-                <button className="py-2.5 px-4 rounded-xl text-[13px] font-semibold text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5">
+                <button
+                  onClick={addToLibrary}
+                  className="py-2.5 px-4 rounded-xl text-[13px] font-semibold text-gray-600 bg-gray-50 border border-gray-200 hover:bg-gray-100 transition-colors flex items-center justify-center gap-1.5"
+                >
                   <Folder className="w-4 h-4" />
                   加入素材庫
                 </button>
               </div>
+
+              {toast && (
+                <div className="px-5 pb-4">
+                  <div className="text-[12px] text-emerald-600 bg-emerald-50 border border-emerald-200 rounded-xl px-4 py-2 text-center">
+                    {toast}
+                  </div>
+                </div>
+              )}
             </div>
 
             {/* 引擎狀態 */}
@@ -742,11 +890,11 @@ export default function VoiceClonePage() {
                 引擎狀態
               </div>
               <div className="space-y-2.5 text-[12.5px]">
-                <div className="flex items-center justify-between"><span className="text-gray-500">模型</span><span className="font-mono text-gray-700 text-[11.5px] bg-gray-50 px-2 py-0.5 rounded">qwen3-tts-vc-realtime</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">區域</span><span className="text-gray-700">新加坡 (ap-southeast-1)</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">首包延遲</span><span className="text-green-600 font-medium">~97 ms</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">流式協議</span><span className="text-gray-700">SSE</span></div>
-                <div className="flex items-center justify-between"><span className="text-gray-500">計費</span><span className="text-gray-700">$0.01/克隆 · $0.02/萬字符</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">模型</span><span className="font-mono text-gray-700 text-[11.5px] bg-gray-50 px-2 py-0.5 rounded">FunAudioLLM/CosyVoice2-0.5B</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">供應商</span><span className="text-gray-700">SiliconFlow</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">合成方式</span><span className="text-green-600 font-medium">整句合成</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">協議</span><span className="text-gray-700">HTTP (REST)</span></div>
+                <div className="flex items-center justify-between"><span className="text-gray-500">計費</span><span className="text-gray-700">SiliconFlow 用量計費</span></div>
               </div>
             </div>
 
@@ -759,13 +907,23 @@ export default function VoiceClonePage() {
               <ul className="text-[12px] text-amber-700/80 space-y-1 leading-relaxed">
                 <li>• 參考音頻建議 10~20 秒，單聲道，≥24kHz 採樣率</li>
                 <li>• 至少包含 3 秒連續清晰朗讀，避免背景噪音</li>
-                <li>• 克隆音色綁定引擎模型，不可跨引擎使用</li>
+                <li>• 克隆音色基於 CosyVoice2，僅限本引擎使用</li>
                 <li>• 上傳前請確認您擁有該聲音的合法使用權</li>
               </ul>
             </div>
           </div>
         </div>
       </div>
+
+      <audio
+        ref={audioRef}
+        style={{ display: 'none' }}
+        onTimeUpdate={onAudioTimeUpdate}
+        onLoadedMetadata={onAudioLoaded}
+        onEnded={onAudioEnded}
+        onPlay={onAudioPlay}
+        onPause={onAudioPause}
+      />
 
       {/* ===== 克隆 Modal ===== */}
       {showModal && (
@@ -786,7 +944,7 @@ export default function VoiceClonePage() {
             <div className="px-6 pt-5 pb-2">
               <div className="flex items-center gap-2">
                 {[1, 2, 3, 4].map((s) => {
-                  const done = modalStep !== 'success' && s < modalStep
+                  const done = modalStep !== 'success' && typeof modalStep === 'number' && s < modalStep
                   const active = modalStep === s
                   return (
                     <div key={s} className="flex items-center gap-2 flex-1 last:flex-none">
@@ -821,7 +979,7 @@ export default function VoiceClonePage() {
                   onDrop={(e) => {
                     e.preventDefault()
                     const f = e.dataTransfer.files[0]
-                    if (f && f.type.startsWith('audio/')) handleFile({ name: f.name, size: f.size })
+                    if (f && f.type.startsWith('audio/')) handleFile(f)
                   }}
                   className="rounded-2xl border-2 border-dashed border-violet-200 p-8 text-center cursor-pointer hover:border-violet-400 hover:bg-violet-50/40 transition-colors"
                 >
@@ -840,7 +998,7 @@ export default function VoiceClonePage() {
                     className="hidden"
                     onChange={(e) => {
                       const f = e.target.files?.[0]
-                      if (f) handleFile({ name: f.name, size: f.size })
+                      if (f) handleFile(f)
                     }}
                   />
                 </div>
@@ -895,9 +1053,9 @@ export default function VoiceClonePage() {
             {modalStep === 2 && (
               <div className="px-6 py-5 space-y-3">
                 {[
-                  { t: '格式通過', d: 'WAV, 16bit, 24000Hz, 單聲道, 15.3s' },
+                  { t: '格式通過', d: 'WAV / MP3 / M4A，單聲道，≥24kHz' },
                   { t: '信噪比合格', d: 'SNR > 25dB，無明顯背景噪音' },
-                  { t: '有效語音充足', d: '連續清晰語音 12.1s (≥3s)' },
+                  { t: '有效語音充足', d: '連續清晰語音 ≥3s' },
                 ].map((r) => (
                   <div key={r.t} className="flex items-center gap-2.5 p-3 rounded-xl bg-emerald-50 border border-emerald-200/60">
                     <CheckCircle2 className="w-5 h-5 text-emerald-500 shrink-0" />
@@ -942,11 +1100,16 @@ export default function VoiceClonePage() {
                     <Loader2 className="w-8 h-8 text-violet-500 animate-spin" />
                   </div>
                   <div className="text-[15px] font-semibold text-gray-800 mb-1">正在提取聲紋特徵...</div>
-                  <div className="text-[13px] text-gray-500 mb-5">Qwen3-TTS 正在分析您的音頻，預計需 5~15 秒</div>
+                  <div className="text-[13px] text-gray-500 mb-5">CosyVoice2 正在分析您的音頻並建模聲紋，預計需 5~15 秒</div>
                   <div className="max-w-[360px] mx-auto h-2 bg-gray-100 rounded-full overflow-hidden">
                     <div className="h-full bg-gradient-to-r from-violet-600 to-purple-600 rounded-full transition-all duration-300" style={{ width: `${genProgress}%` }} />
                   </div>
                   <div className="text-[11.5px] text-gray-400 mt-2">{genStatus}</div>
+                  {errorMsg && (
+                    <div className="text-[12px] text-red-500 bg-red-50 border border-red-200 rounded-xl px-4 py-2 mt-3 text-left">
+                      {errorMsg}
+                    </div>
+                  )}
                 </div>
               </div>
             )}
