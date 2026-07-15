@@ -107,6 +107,9 @@ export default function VoiceClonePage() {
   const [emotion, setEmotion] = useState<string | null>(null)
   const [optimize, setOptimize] = useState(false)
 
+  /* ---- 克隆參考文本 ---- */
+  const [cloneRefText, setCloneRefText] = useState('')
+
   /* ---- 高級參數 ---- */
   const [speed, setSpeed] = useState(1)
   const [volume, setVolume] = useState(100)
@@ -279,6 +282,7 @@ export default function VoiceClonePage() {
     setFileName('')
     setFileInfo('')
     setErrorMsg('')
+    setCloneRefText('')
     audioFileRef.current = null
     if (goRecord) setTimeout(() => toggleRecord(), 300)
   }
@@ -310,6 +314,7 @@ export default function VoiceClonePage() {
   const startClone = async () => {
     const file = audioFileRef.current
     if (!file) { setErrorMsg('請先上傳參考音頻'); return }
+    if (!cloneRefText.trim()) { setErrorMsg('請先填寫「參考音頻對應文本」'); return }
     setModalStep(4)
     setGenStatus('上傳參考音頻並提取聲紋…')
     setGenProgress(15)
@@ -324,7 +329,7 @@ export default function VoiceClonePage() {
         body: JSON.stringify({
           audio_base64,
           audio_name: fileName || file.name,
-          text: synthText || '',
+          text: cloneRefText || '',
         }),
       })
       if (!res.ok) {
@@ -1065,6 +1070,26 @@ export default function VoiceClonePage() {
                     </div>
                   </div>
                 ))}
+
+                {/* 參考音頻對應文本（必填） */}
+                <div className="mt-2 p-4 rounded-xl bg-amber-50 border border-amber-200/60">
+                  <label className="text-[13px] font-semibold text-gray-800 block mb-1.5">
+                    參考音頻對應文本
+                    <span className="text-red-500 ml-0.5">*</span>
+                  </label>
+                  <textarea
+                    value={cloneRefText}
+                    onChange={(e) => setCloneRefText(e.target.value)}
+                    placeholder="請輸入參考音頻中實際念出的文字（例如：「大家好，歡迎來到我的課堂，今天我們要學習的是人工智慧的基礎知識。」）"
+                    rows={3}
+                    maxLength={500}
+                    className="w-full border border-amber-300/60 rounded-xl px-4 py-2.5 text-[13.5px] focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-amber-400 resize-none leading-relaxed"
+                  />
+                  <div className="flex items-center justify-between mt-1.5">
+                    <span className="text-[11px] text-amber-600/80">必填 · 用於 CosyVoice2 聲紋建模精確匹配</span>
+                    <span className="text-[11px] text-gray-400">{cloneRefText.length}/500</span>
+                  </div>
+                </div>
               </div>
             )}
 
