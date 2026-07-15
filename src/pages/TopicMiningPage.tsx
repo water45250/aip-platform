@@ -139,7 +139,7 @@ export default function TopicMiningPage() {
   const [selectedDomains, setSelectedDomains] = useState<string[]>(['all'])
   const [isMining, setIsMining] = useState(false)
   const [activeTab, setActiveTab] = useState('score')
-  const [platform, setPlatform] = useState('全部平台')
+  const [platform, setPlatform] = useState('全部平臺')
   const [period, setPeriod] = useState('近7天')
   const [appliedTopic, setAppliedTopic] = useState<number | null>(null)
   const [expandedId, setExpandedId] = useState<number | null>(null)
@@ -239,7 +239,7 @@ export default function TopicMiningPage() {
           </button>
         </div>
 
-        {/* Row 1: 趨勢概覽 + 關鍵詞云 */}
+        {/* Row 1: 趨勢概覽 + 關鍵詞雲 */}
         <div className="grid grid-cols-12 gap-5">
           {/* 熱點趨勢概覽 */}
           <div className="col-span-12 lg:col-span-8">
@@ -261,10 +261,10 @@ export default function TopicMiningPage() {
             </div>
           </div>
 
-          {/* 熱點關鍵詞云 */}
+          {/* 熱點關鍵詞雲 */}
           <div className="col-span-12 lg:col-span-4">
             <div className="flex items-center justify-between mb-3">
-              <h2 className="text-[14.5px] font-bold text-gray-900">熱點關鍵詞云</h2>
+              <h2 className="text-[14.5px] font-bold text-gray-900">熱點關鍵詞雲</h2>
               <div className="flex items-center gap-1.5 text-[11px] text-gray-400">
                 <span>實時更新：</span>
                 <span className="text-gray-600 font-mono">2024-05-21 14:30</span>
@@ -309,7 +309,7 @@ export default function TopicMiningPage() {
                     onChange={(e) => setPlatform(e.target.value)}
                     className="appearance-none text-[11.5px] border border-gray-200 rounded-lg pl-2.5 pr-7 py-1.5 text-gray-600 focus:outline-none focus:ring-2 focus:ring-violet-200 cursor-pointer"
                   >
-                    <option>全部平台</option><option>YouTube</option><option>抖音</option><option>B站</option><option>小紅書</option>
+                    <option>全部平臺</option><option>YouTube</option><option>抖音</option><option>B站</option><option>小紅書</option>
                   </select>
                   <ChevronDown className="w-3.5 h-3.5 text-gray-400 absolute right-2 top-1/2 -translate-y-1/2 pointer-events-none" />
                 </div>

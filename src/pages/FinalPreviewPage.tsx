@@ -346,7 +346,7 @@ export default function FinalPreviewPage() {
             <MetaRow k="輸出" v={project.outputs[0].format + ' · ' + project.outputs[0].resolution} />
             <MetaRow k="幻燈片風險" v="2/6" />
             <div className="text-[12px] text-gray-500 pt-1 border-t border-gray-50 mt-1">
-              已通過自動校驗，碼率與色彩空間符合平台規範。
+              已通過自動校驗，碼率與色彩空間符合平臺規範。
             </div>
             <div className="text-[12px] text-emerald-600">無警告</div>
           </div>
@@ -380,7 +380,7 @@ export default function FinalPreviewPage() {
           <LinkIcon className="w-5 h-5 text-violet-500 mt-0.5 flex-shrink-0" />
           <div className="text-[12.5px] text-gray-600 leading-relaxed">
             <span className="font-medium text-gray-800">項目已準備就緒。</span>
-            所有製作階段已完成審核，視頻可直接發布至各平台。如需修改，可返回對應步驟重新編輯。
+            所有製作階段已完成審核，視頻可直接發布至各平臺。如需修改，可返回對應步驟重新編輯。
           </div>
         </div>
       </div>

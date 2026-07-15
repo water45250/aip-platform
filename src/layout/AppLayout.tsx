@@ -15,7 +15,7 @@ export default function AppLayout() {
             </div>
             <div>
               <div className="text-lg font-bold text-white tracking-tight">AIP</div>
-              <div className="text-[10px] text-gray-400/80 -mt-0.5">超級個體 AI 創作平台</div>
+              <div className="text-[10px] text-gray-400/80 -mt-0.5">超級個體 AI 創作平臺</div>
             </div>
           </div>
         </div>
@@ -79,7 +79,7 @@ export default function AppLayout() {
               早上好，創作者 <span className="text-lg">👋</span>
             </h1>
             <p className="text-xs text-gray-500 mt-0.5">
-              歡迎使用 AIP 超級個體 AI 創作平台，今天又是高效創作的一天！
+              歡迎使用 AIP 超級個體 AI 創作平臺，今天又是高效創作的一天！
             </p>
           </div>
           <div className="flex items-center gap-3">

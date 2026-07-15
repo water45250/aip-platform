@@ -8,9 +8,9 @@ import {
 } from 'lucide-react'
 import { sampleProject } from '../lib/openmontage-schema'
 
-// ============ mock 数据（后续替换为接口） ============
+// ============ mock 數據（後續替換爲接口） ============
 
-// 平台预设数字人形象（设计稿中的 11 个）
+// 平臺預設數字人形象（設計稿中的 11 個）
 const AVATARS = [
   { id: 'dh1',  name: '知性女主播',     gender: '女', style: '專業', tag: '熱門' },
   { id: 'dh2',  name: '商務男主播',     gender: '男', style: '商務', tag: '熱門' },
@@ -25,31 +25,31 @@ const AVATARS = [
   { id: 'dh11', name: '全齡男專家',     gender: '男', style: '全齡', tag: '' },
 ]
 
-// 服装选项（设计稿）
+// 服裝選項（設計稿）
 const OUTFITS = ['outfit-1', 'outfit-2', 'outfit-3', 'outfit-4', 'outfit-5']
-// 背景选项（含自定义）
+// 背景選項（含自定義）
 const BACKGROUNDS = ['bg-custom', 'bg-1', 'bg-2', 'bg-3', 'bg-4']
 // 畫面風格
 const VISUAL_STYLES = [
-  { key: 'natural', label: '自然真实' },
-  { key: 'cinema', label: '电影质感' },
+  { key: 'natural', label: '自然真實' },
+  { key: 'cinema', label: '電影質感' },
   { key: 'fresh',   label: '清新明亮' },
   { key: 'tech',    label: '科技感' },
-  { key: 'warm',    label: '温暖柔和' },
+  { key: 'warm',    label: '溫暖柔和' },
 ]
-// 镜头选项
+// 鏡頭選項
 const SHOT_TYPES = ['特寫', '近景', '中景', '全景', '大全景']
 const ANGLES = ['正面', '側面', '斜側', '俯拍', '仰拍']
 const POSITIONS = ['居中', '左偏', '右偏', '上偏', '下偏']
 
-// 已克隆声音
+// 已克隆聲音
 const VOICES = [
   { id: 'v1', name: '我的聲音·標準', desc: '已克隆 · 自然' },
   { id: 'v2', name: '我的聲音·溫柔', desc: '已克隆 · 親和' },
 ]
 
-// 计费
-const RATE_PER_MIN = 0.8 // ¥/分钟
+// 計費
+const RATE_PER_MIN = 0.8 // ¥/分鐘
 
 function estimateMinutes(text: string): number {
   return Math.max(0.5, text.replace(/\s/g, '').length / 240)
@@ -64,12 +64,12 @@ export default function DigitalHumanPage() {
   const [voiceId, setVoiceId] = useState<string>('v1')
   const [script, setScript] = useState<string>(DEFAULT_SCRIPT)
 
-  // Step 1 筛选与配置状态
+  // Step 1 篩選與配置狀態
   const [tab, setTab] = useState<'mine' | 'platform'>('platform')
   const [genderFilter, setGenderFilter] = useState('全部')
   const [styleFilter, setStyleFilter] = useState('全部風情')
   const [sceneFilter, setSceneFilter] = useState('全部場景')
-  const [ratio, setRatio] = useState('9:16') // 竖版默认
+  const [ratio, setRatio] = useState('9:16') // 豎版默認
   const [previewTab, setPreviewTab] = useState<'look' | 'action'>('look')
   const [selectedOutfit, setSelectedOutfit] = useState(0)
   const [selectedBg, setSelectedBg] = useState(1)
@@ -79,7 +79,7 @@ export default function DigitalHumanPage() {
   const [position, setPosition] = useState('居中')
   const [autoMatch, setAutoMatch] = useState(true)
 
-  // Step 4 生成状态
+  // Step 4 生成狀態
   const [isGenerating, setIsGenerating] = useState(false)
   const [progress, setProgress] = useState(0)
 
@@ -92,7 +92,7 @@ export default function DigitalHumanPage() {
     (genderFilter === '全部' || a.gender === genderFilter)
   )
 
-  // 模拟生成进度
+  // 模擬生成進度
   function handleGenerate() {
     if (isGenerating) return
     setIsGenerating(true); setProgress(0)
@@ -101,12 +101,12 @@ export default function DigitalHumanPage() {
     }, 150)
   }
 
-  // ============ Step 1: 数字人選擇（三栏布局）============
+  // ============ Step 1: 數字人選擇（三欄佈局）============
   if (step === 1) {
     return (
       <div className="p-6">
         <div className="max-w-[1280px] mx-auto space-y-5">
-          {/* 面包屑 */}
+          {/* 麪包屑 */}
           <div className="flex items-center justify-between flex-wrap gap-3">
             <div>
               <Link to="/voice-clone" className="text-[12px] text-gray-400 hover:text-violet-600 flex items-center gap-1 mb-1">
@@ -124,7 +124,7 @@ export default function DigitalHumanPage() {
             </div>
           </div>
 
-          {/* 步骤条 */}
+          {/* 步驟條 */}
           <div className="flex items-center gap-2">
             {STEPS.map((s, i) => {
               const n = i + 1
@@ -142,15 +142,15 @@ export default function DigitalHumanPage() {
             })}
           </div>
 
-          {/* 三栏主体 */}
+          {/* 三欄主體 */}
           <div className="grid grid-cols-12 gap-5">
-            {/* ===== 左栏：筛选 + 数字人网格 ===== */}
+            {/* ===== 左欄：篩選 + 數字人網格 ===== */}
             <div className="col-span-7 space-y-4">
-              {/* 我的数字人 / 平台数字人 tab */}
+              {/* 我的數字人 / 平臺數字人 tab */}
               <div>
                 <h3 className="text-[14px] font-bold text-gray-800 mb-2">選擇數字人</h3>
                 <div className="inline-flex rounded-xl bg-white border border-gray-200 p-0.5">
-                  {[{k:'mine',l:'我的數字人'}, {k:'platform',l:'平台數字人'}].map(t => (
+                  {[{k:'mine',l:'我的數字人'}, {k:'platform',l:'平臺數字人'}].map(t => (
                     <button key={t.k} onClick={() => setTab(t.k as any)}
                       className={'px-4 py-1.5 rounded-[10px] text-[12.5px] font-medium transition-all ' + (tab===t.k?'bg-violet-50 text-violet-600':'text-gray-500 hover:text-gray-700')}>
                       {t.l}
@@ -159,7 +159,7 @@ export default function DigitalHumanPage() {
                 </div>
               </div>
 
-              {/* 筛选栏（下拉式）*/}
+              {/* 篩選欄（下拉式）*/}
               <div className="flex items-center gap-3 flex-wrap">
                 {/* 性別 */}
                 <div className="space-y-1">
@@ -185,19 +185,19 @@ export default function DigitalHumanPage() {
                 </div>
               </div>
 
-              {/* 数字人卡片网格（3列） */}
+              {/* 數字人卡片網格（3列） */}
               <div className="grid grid-cols-3 gap-3">
                 {filteredAvatars.map((a) => {
                   const sel = a.id === avatarId
                   return (
                     <button key={a.id} onClick={() => setAvatarId(a.id)}
                       className={'relative group rounded-xl overflow-hidden border-2 transition-all text-left bg-white ' + (sel ? 'border-violet-500 ring-2 ring-violet-200' : 'border-gray-100 hover:border-violet-300 hover:shadow-sm')}>
-                      {/* 头像区域（模拟照片风格） */}
+                      {/* 頭像區域（模擬照片風格） */}
                       <div className="aspect-square bg-gradient-to-br from-gray-50 via-gray-100 to-gray-50 flex items-center justify-center relative">
                         <UserCircle className="w-14 h-14 text-gray-300 group-hover:text-violet-300 transition-colors" />
                         {sel && <div className="absolute top-2 right-2 w-5 h-5 rounded-full bg-violet-600 flex items-center justify-center"><Check className="w-3 h-3 text-white" /></div>}
                       </div>
-                      {/* 信息区 */}
+                      {/* 信息區 */}
                       <div className="p-2.5 pb-3">
                         <div className="text-[13px] font-semibold text-gray-800">{a.name}</div>
                         <div className="flex items-center gap-1 mt-1">
@@ -208,14 +208,14 @@ export default function DigitalHumanPage() {
                     </button>
                   )
                 })}
-                {/* 创建自定义数字人卡片 */}
+                {/* 創建自定義數字人卡片 */}
                 <button onClick={()=>{}} className="rounded-xl border-2 border-dashed border-gray-200 hover:border-violet-300 flex flex-col items-center justify-center aspect-[1/1] min-h-[140px] gap-2 text-gray-400 hover:text-violet-500 transition-all bg-white">
                   <Plus className="w-7 h-7" />
-                  <div className="text-[11.5px] leading-tight text-center">創建我的數字人<br/><span className="text-gray-300">定制專屬數字人形象</span></div>
+                  <div className="text-[11.5px] leading-tight text-center">創建我的數字人<br/><span className="text-gray-300">定製專屬數字人形象</span></div>
                 </button>
               </div>
 
-              {/* 分页器 */}
+              {/* 分頁器 */}
               <div className="flex items-center justify-center gap-2 text-[12px] text-gray-400 pt-1">
                 共 {filteredAvatars.length+1} 條
                 <button className="w-7 h-7 rounded-lg border border-gray-200 flex items-center justify-center hover:bg-gray-50"><ChevronLeft className="w-3.5 h-3.5" /></button>
@@ -228,11 +228,11 @@ export default function DigitalHumanPage() {
               </div>
             </div>
 
-            {/* ===== 右栏：预览面板 ===== */}
+            {/* ===== 右欄：預覽面板 ===== */}
             <div className="col-span-5 space-y-4">
               <h3 className="text-[14px] font-bold text-gray-800">數字人預覽</h3>
 
-              {/* 视频比例切换 */}
+              {/* 視頻比例切換 */}
               <div className="flex items-center gap-2">
                 {['9:16','16:9','1:1'].map(r => (
                   <button key={r} onClick={()=>setRatio(r)} className={'text-[12px] px-3 py-1 rounded-lg border transition-all ' + (ratio===r?'border-violet-400 bg-violet-50 text-violet-600':'border-gray-200 text-gray-500 hover:bg-gray-50')}>{r==='9:16'?'豎版':r==='16:9'?'橫版':'方版'} {r}
@@ -240,12 +240,12 @@ export default function DigitalHumanPage() {
               ))}
               </div>
 
-              {/* 视频/图片预览区 */}
+              {/* 視頻/圖片預覽區 */}
               <div className={`relative rounded-xl overflow-hidden bg-gradient-to-br from-gray-50 to-gray-100 ${ratio==='9:16'?'aspect-[9/16]':ratio==='16:9'?'aspect-video':'aspect-square'} flex items-center justify-center`}>
                 <div className="absolute inset-0 flex items-center justify-center">
                   <UserCircle className={`text-gray-250 ${ratio!=='1:1'?'w-24 h-24':'w-28 h-28'}`} />
                 </div>
-                {/* 播放控制条 */}
+                {/* 播放控制條 */}
                 <div className="absolute bottom-0 left-0 right-0 p-2.5 bg-gradient-to-t from-black/60 to-transparent">
                   <div className="flex items-center gap-2 mb-1">
                     <Play className="w-4 h-4 text-white cursor-pointer hover:text-violet-300" />
@@ -258,7 +258,7 @@ export default function DigitalHumanPage() {
                 </div>
               </div>
 
-              {/* 形象设置 / 动作设置 tab */}
+              {/* 形象設置 / 動作設置 tab */}
               <div className="flex items-center gap-2">
                 {[{k:'look',l:'形象設置'},{k:'action',l:'動作設置'}].map(t=>(
                   <button key={t.k} onClick={()=>setPreviewTab(t.k as any)}
@@ -314,7 +314,7 @@ export default function DigitalHumanPage() {
                 </div>
               </div>
 
-              {/* 其他设置 */}
+              {/* 其他設置 */}
               <div>
                 <div className="text-[13px] font-medium text-gray-800 mb-2">其他設置</div>
                 <div className="grid grid-cols-3 gap-2.5">
@@ -349,7 +349,7 @@ export default function DigitalHumanPage() {
             </div>
           </div>
 
-          {/* 底部：当前选择摘要 + 下一步按钮 */}
+          {/* 底部：當前選擇摘要 + 下一步按鈕 */}
           <div className="flex items-center justify-between p-4 rounded-xl bg-white border border-gray-100">
             <div className="flex items-center gap-3">
               <span className="text-[12.5px] text-gray-500">當前選擇</span>
@@ -371,7 +371,7 @@ export default function DigitalHumanPage() {
     return (
       <div className="p-6">
         <div className="max-w-[1280px] mx-auto space-y-5">
-          {/* 步骤条 */}
+          {/* 步驟條 */}
           <div className="flex items-center gap-2">
             {STEPS.map((s, i) => {
               const n = i + 1
@@ -387,7 +387,7 @@ export default function DigitalHumanPage() {
           </div>
 
           <div className="grid grid-cols-1 lg:grid-cols-2 gap-6">
-            {/* 脚本 */}
+            {/* 腳本 */}
             <div className="rounded-xl bg-white border border-gray-100 p-5">
               <h3 className="text-[13px] font-bold text-gray-800 mb-1 flex items-center gap-1.5"><FileText className="w-4 h-4 text-violet-500" /> 腳本內容</h3>
               <p className="text-[11px] text-gray-400 mb-3">從「腳本創作」導入，或直接編輯下方文案</p>
@@ -397,7 +397,7 @@ export default function DigitalHumanPage() {
                 <span>預估時長 {minutes.toFixed(1)} 分鐘</span>
               </div>
             </div>
-            {/* 声音 */}
+            {/* 聲音 */}
             <div className="rounded-xl bg-white border border-gray-100 p-5">
               <h3 className="text-[13px] font-bold text-gray-800 mb-1 flex items-center gap-1.5"><Mic className="w-4 h-4 text-violet-500" /> 選擇聲音</h3>
               <p className="text-[11px] text-gray-400 mb-3">使用「聲音克隆」中已克隆的聲音模型驅動數字人</p>
@@ -421,7 +421,7 @@ export default function DigitalHumanPage() {
               </Link>
             </div>
           </div>
-          {/* 导航 */}
+          {/* 導航 */}
           <div className="flex items-center justify-between">
             <button onClick={()=>setStep(1)} className="flex items-center gap-1.5 text-[13px] text-gray-600 border border-gray-200 rounded-xl px-4 py-2 hover:bg-gray-50">
               <ChevronLeft className="w-4 h-4" /> 上一步
@@ -467,7 +467,7 @@ export default function DigitalHumanPage() {
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-gray-50 text-[11.5px] text-gray-500 leading-relaxed">
-                數字人視頻由 <span className="text-violet-600 font-medium">Duix-Avatar</span> 本地推理生成（文本→語音→唇形同步→畫面合成），輸出為口播成片。
+                數字人視頻由 <span className="text-violet-600 font-medium">Duix-Avatar</span> 本地推理生成（文本→語音→脣形同步→畫面合成），輸出為口播成片。
               </div>
               <div className="mt-3 p-3 rounded-xl bg-violet-50 border border-violet-100 text-[12.5px] text-gray-600 flex items-center gap-2">
                 <Coins className="w-4 h-4 text-violet-500 shrink-0" />

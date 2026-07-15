@@ -13,7 +13,7 @@ const VOICES = [
   {
     id: 'taiwan-vivian', name: 'Taiwan-Vivian', sub: 'Qwen3-TTS · 克隆',
     initial: 'T', avatar: 'bg-gradient-to-br from-violet-600 to-purple-600',
-    status: '可用', tags: ['中文', '台灣腔'], cat: 'cloned', fav: true,
+    status: '可用', tags: ['中文', '臺灣腔'], cat: 'cloned', fav: true,
   },
   {
     id: 'host-kevin', name: 'Host-Kevin', sub: 'Qwen3-TTS · 克隆',
@@ -40,7 +40,7 @@ const VOICES = [
 const VOICE_TABS = [
   { key: 'all', label: '全部' },
   { key: 'cloned', label: '我克隆的' },
-  { key: 'preset', label: '平台預設' },
+  { key: 'preset', label: '平臺預設' },
   { key: 'fav', label: '收藏' },
 ]
 
@@ -467,7 +467,7 @@ export default function VoiceClonePage() {
                 value={synthText}
                 onChange={(e) => setSynthText(e.target.value)}
                 rows={4}
-                placeholder={'請輸入要合成的文本內容（支持繁體中文）...\n例如：歡迎來到文經客創作平台，今天我們來聊聊如何用AI提升內容生產效率。'}
+                placeholder={'請輸入要合成的文本內容（支持繁體中文）...\n例如：歡迎來到文經客創作平臺，今天我們來聊聊如何用AI提升內容生產效率。'}
                 className="w-full resize-none border border-gray-200 rounded-xl px-4 py-3 text-[14px] leading-relaxed text-gray-700 focus:outline-none focus:ring-2 focus:ring-violet-300 focus:border-violet-400 placeholder:text-gray-300 transition-shadow"
               />
               <div className="mt-3 flex items-center justify-between">
@@ -961,7 +961,7 @@ export default function VoiceClonePage() {
                   <div className="text-[15px] font-semibold text-gray-800 mb-1">音色克隆成功！</div>
                   <div className="text-[13px] text-gray-500 mb-4">您的專屬音色已就緒，接下來選擇創作路徑：</div>
 
-                  {/* Y型分叉引导 */}
+                  {/* Y型分叉引導 */}
                   <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 max-w-lg mx-auto">
                     <Link to="/digital-human" className="group rounded-xl border-2 border-violet-200 bg-violet-50/40 p-4 hover:border-violet-400 hover:bg-violet-100/60 transition-all text-left">
                       <div className="flex items-center gap-2 mb-2">

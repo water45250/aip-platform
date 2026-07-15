@@ -9,7 +9,7 @@ import {
   Zap,
 } from 'lucide-react'
 
-// ============ Tab 定义 ============
+// ============ Tab 定義 ============
 const TABS = [
   { key: 'orders', label: '訂單記錄' },
   { key: 'bills',  label: '帳單記錄' },
@@ -28,11 +28,11 @@ const KPIS = [
   { icon: Ticket,   label: '代金券',   value: '3',            action: '查看詳情', suffix: '張可用', color: '#EC4899' },
 ]
 
-// ============ 消费趋势数据 ============
+// ============ 消費趨勢數據 ============
 const TREND_DATES = ['2024-11','2024-12','2025-01','2025-02','2025-03','2025-04','2025-05']
 const TREND_VALUES = [1020,1280,1550,1420,1890,1580,1680]
 
-// ============ 消费构成（本月） ============
+// ============ 消費構成（本月） ============
 const COST_BREAKDOWN = [
   { label: '視頻生成', pct: 45, amt: '¥756.00', color: '#7C3AED' },
   { label: '數字人',   pct: 20, amt: '¥336.00', color: '#06B6D4' },
@@ -41,7 +41,7 @@ const COST_BREAKDOWN = [
   { label: '其他服務', pct: 10, amt: '¥168.00', color: '#D1D5DB' },
 ]
 
-// ============ 订单记录 ============
+// ============ 訂單記錄 ============
 interface OrderRow {
   id: string
   product: string
@@ -54,13 +54,13 @@ interface OrderRow {
 }
 
 const ORDERS: OrderRow[] = [
-  { id: '202505210001', product: 'AI 积分包（5000 積分）', type: '積分包', amount: '¥299.00', paid: '¥299.00', status: 'paid', time: '2025-05-21 14:30:22' },
+  { id: '202505210001', product: 'AI 積分包（5000 積分）', type: '積分包', amount: '¥299.00', paid: '¥299.00', status: 'paid', time: '2025-05-21 14:30:22' },
   { id: '202505200045', product: '數字人視頻生成（10分鐘）', type: '服務', amount: '¥168.00', discount: '-¥20.00', paid: '¥148.00', status: 'paid', time: '2025-05-20 10:15:33' },
   { id: '202505180032', product: '尊享會員 年付', type: '套餐', amount: '¥998.00', discount: '-¥100.00', paid: '¥898.00', status: 'paid', time: '2025-05-18 09:22:11' },
   { id: '202505160023', product: '智能剪輯（高級版）', type: '服務', amount: '¥59.00', paid: '¥59.00', status: 'paid', time: '2025-05-16 18:45:06' },
   { id: '202505150018', product: '聲音克隆（高級音色）', type: '服務', amount: '¥99.00', paid: '¥99.00', status: 'paid', time: '2025-05-15 11:08:42' },
   { id: '202505130015', product: '高清導出（4K）', type: '服務', amount: '¥39.00', paid: '¥39.00', status: 'paid', time: '2025-05-13 14:55:19' },
-  { id: '202505120009', product: 'AI 积分包（10000 積分）', type: '積分包', amount: '¥499.00', discount: '-¥50.00', paid: '¥449.00', status: 'pending', time: '2025-05-12 20:30:44' },
+  { id: '202505120009', product: 'AI 積分包（10000 積分）', type: '積分包', amount: '¥499.00', discount: '-¥50.00', paid: '¥449.00', status: 'pending', time: '2025-05-12 20:30:44' },
   { id: '202505100007', product: '數字人視頻生成（20分鐘）', type: '服務', amount: '¥299.00', paid: '¥299.00', status: 'cancelled', time: '2025-05-10 18:20:33' },
 ]
 
@@ -201,9 +201,9 @@ export default function BillingPage() {
           })}
         </div>
 
-        {/* ===== Main Content Grid：三列布局（趋势|构成|套餐），订单表跨左中两列 ===== */}
+        {/* ===== Main Content Grid：三列布局（趨勢|構成|套餐），訂單表跨左中兩列 ===== */}
         <div className="grid grid-cols-12 gap-5">
-          {/* 左列：消费趋势 — col-6 */}
+          {/* 左列：消費趨勢 — col-6 */}
           <div className="col-span-6 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <h3 className="text-[14.5px] font-bold text-gray-800">消費趨勢</h3>
@@ -215,7 +215,7 @@ export default function BillingPage() {
             <TrendLine data={TREND_VALUES} w={480} h={180} />
           </div>
 
-          {/* 中列：消费构成 — col-3 */}
+          {/* 中列：消費構成 — col-3 */}
           <div className="col-span-3 rounded-xl bg-white border border-gray-100 p-5 space-y-3">
             <h3 className="text-[13.5px] font-bold text-gray-800">消費構成（本月）</h3>
             <div className="flex flex-col items-center gap-3">
@@ -239,9 +239,9 @@ export default function BillingPage() {
             </div>
           </div>
 
-          {/* 右列：当前套餐 + 本月使用 + 快速操作 — col-3 堆叠 */}
+          {/* 右列：當前套餐 + 本月使用 + 快速操作 — col-3 堆疊 */}
           <div className="col-span-3 space-y-5">
-            {/* 当前套餐 */}
+            {/* 當前套餐 */}
             <div className="rounded-xl bg-gradient-to-br from-violet-50 to-purple-50 border border-violet-100 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <div className="flex items-center gap-2">
@@ -265,7 +265,7 @@ export default function BillingPage() {
               </button>
             </div>
 
-            {/* 本月使用情况 */}
+            {/* 本月使用情況 */}
             <div className="rounded-xl bg-white border border-gray-100 p-4 space-y-3">
               <div className="flex items-center justify-between">
                 <h3 className="text-[12px] font-bold text-gray-800">本月使用情況</h3>
@@ -275,7 +275,7 @@ export default function BillingPage() {
                 { label: 'AI 積分', used: 2880, total: 5000, unit: '', pct: 57 },
                 { label: '數字人時長', used: 220, total: 600, unit: '分鐘', pct: 37 },
                 { label: '高清導出', used: 38, total: 100, unit: '次', pct: 38 },
-                { label: '云存儲空間', used: 12.6, total: 50, unit: 'GB', pct: 25 },
+                { label: '雲存儲空間', used: 12.6, total: 50, unit: 'GB', pct: 25 },
               ].map(item => (
                 <div key={item.label}>
                   <div className="flex items-center justify-between mb-1">
@@ -315,7 +315,7 @@ export default function BillingPage() {
             </div>
           </div>
 
-          {/* ===== 訂單記錄 Table — 跨左中两列(col-9)，与右栏等高对齐 ===== */}
+          {/* ===== 訂單記錄 Table — 跨左中兩列(col-9)，與右欄等高對齊 ===== */}
           <div className="col-span-9 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
             <h3 className="text-[14.5px] font-bold text-gray-800">訂單記錄</h3>
 
@@ -349,7 +349,7 @@ export default function BillingPage() {
             <table className="w-full text-[12.5px]">
               <thead>
                 <tr className="border-b border-gray-100">
-                  {['訂單号','商品名稱','訂單類型','金額','優惠','實付金額','狀態','創建時間','操作'].map(h =>
+                  {['訂單號','商品名稱','訂單類型','金額','優惠','實付金額','狀態','創建時間','操作'].map(h =>
                     <th key={h} className="py-2.5 px-3 text-left font-medium text-gray-500 whitespace-nowrap">{h}</th>
                   )}
                 </tr>

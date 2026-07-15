@@ -41,7 +41,7 @@ export default function LoginPage() {
               </div>
               <span className="text-2xl font-bold text-white tracking-tight">AIP</span>
             </div>
-            <p className="text-purple-200/80 text-sm ml-1">超級個體 AI 創作平台</p>
+            <p className="text-purple-200/80 text-sm ml-1">超級個體 AI 創作平臺</p>
           </div>
 
           <div className="space-y-8">
@@ -58,7 +58,7 @@ export default function LoginPage() {
               {[
                 { icon: Zap, label: 'AI 智能創作引擎', desc: '選題→腳本→數字人→發布' },
                 { icon: Shield, label: '多維度內容審核', desc: '安全合規與智能優化' },
-                { icon: Globe, label: '多平台一鍵分發', desc: '抖音/快手/B站/小紅書' },
+                { icon: Globe, label: '多平臺一鍵分發', desc: '抖音/快手/B站/小紅書' },
               ].map((item, i) => (
                 <div key={i} className="flex items-center gap-4 group">
                   <div className="w-10 h-10 rounded-lg bg-white/10 backdrop-blur flex items-center justify-center group-hover:bg-white/20 transition-colors">
@@ -74,7 +74,7 @@ export default function LoginPage() {
           </div>
 
           <div className="text-purple-300/50 text-xs">
-            © 2026 AIP 超級個體 AI 創作平台
+            © 2026 AIP 超級個體 AI 創作平臺
           </div>
         </div>
       </div>

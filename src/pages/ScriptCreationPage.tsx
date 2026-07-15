@@ -63,7 +63,7 @@ const INITIAL_CHAPTERS = [
   { id: 6, label: '核心內容三：AI 改變協作', content: '' },
   { id: 7, label: '核心內容四：AI 激發創造力', content: '' },
   { id: 8, label: '總結升華', content: '' },
-  { id: 9, label: '行動号召（CTA）', content: '' },
+  { id: 9, label: '行動號召（CTA）', content: '' },
 ]
 
 const TONES = ['😊 吸引好奇', '😐 嚴肅專業', '🥺 輕松幽默', '😈 震撼沖擊']
@@ -261,7 +261,7 @@ export default function ScriptCreationPage() {
                   </div>
                   <div>
                     <label className="block text-[12px] text-gray-500 mb-1">目標受眾</label>
-                    <Select value={audience} onChange={setAudience} options={['職場人士', '學生群體', '創業者', '大眾']} />
+                    <Select value={audience} onChange={setAudience} options={['職場人士', '學生羣體', '創業者', '大眾']} />
                   </div>
                   <div>
                     <label className="block text-[12px] text-gray-500 mb-1">視頻時長</label>
@@ -286,7 +286,7 @@ export default function ScriptCreationPage() {
                       <Select value={advLanguage} onChange={setAdvLanguage} options={['繁體中文', '簡體中文', '英文']} />
                     </div>
                     <div>
-                      <label className="block text-[12px] text-gray-500 mb-1">平台</label>
+                      <label className="block text-[12px] text-gray-500 mb-1">平臺</label>
                       <Select value={advPlatform} onChange={setAdvPlatform} options={['抖音 / TikTok', 'YouTube', '小紅書', '視頻號']} />
                     </div>
                     <div>
@@ -502,7 +502,7 @@ export default function ScriptCreationPage() {
               <ul className="space-y-2 text-[12.5px] text-gray-600 leading-relaxed list-disc pl-5">
                 <li>開頭 3 秒決定觀眾是否留存，用反常識或強衝突抓住注意力。</li>
                 <li>每個核心觀點配一個真實案例或數據，提升可信度。</li>
-                <li>結尾給清晰的行動号召（關注 / 評論 / 轉發），提升互動。</li>
+                <li>結尾給清晰的行動號召（關注 / 評論 / 轉發），提升互動。</li>
               </ul>
               <button className="mt-3 text-[12.5px] text-violet-600 hover:underline font-medium">查看腳本創作指南 <ChevronRight className="w-3 h-3 inline" /></button>
             </section>

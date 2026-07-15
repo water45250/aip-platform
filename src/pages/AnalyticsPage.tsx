@@ -7,7 +7,7 @@ import {
   ArrowRight, RefreshCw,
 } from 'lucide-react'
 
-// ============ Mock 数据 ============
+// ============ Mock 數據 ============
 const KPI_CARDS = [
   { key: 'content', label: '內容總數', value: '1,248', icon: FileVideo, color: '#7C3AED', change: '+12.5%', up: true },
   { key: 'views',   label: '播放量',   value: '128.6萬', icon: Play,      color: '#3B82F6', change: '+18.7%', up: true },
@@ -25,12 +25,12 @@ const REALTIME_DATA = [
   { label: '漲粉數', value: '328',  sparkline: [4,6,5,8,7,10,8] },
 ]
 
-// 趋势数据（7天）
+// 趨勢數據（7天）
 const TREND_DATES = ['05-15','05-16','05-17','05-18','05-19','05-20','05-21']
 const TREND_CURRENT = [8.2, 12.5, 19.8, 14.3, 17.6, 21.2, 12.8]
 const TREND_LAST = [5.1, 7.8, 11.2, 9.0, 10.5, 13.1, 8.4]
 
-// 内容类型
+// 內容類型
 const CONTENT_TYPES = [
   { label: '數字人視頻', pct: 38.6, color: '#7C3AED' },
   { label: '知識分享',   pct: 24.3, color: '#06B6D4' },
@@ -39,16 +39,16 @@ const CONTENT_TYPES = [
   { label: '其他',       pct: 8.6,  color: '#E5E7EB' },
 ]
 
-// TOP 内容排行
+// TOP 內容排行
 const TOP_CONTENTS = [
   { rank: 1, title: 'AI如何改變我們的工作方式', date: '2024-05-18', views: '152,643' },
   { rank: 2, title: '5個高效時間管理技巧',     date: '2024-05-17', views: '98,765' },
   { rank: 3, title: '旅行vlog｜川西之旅',     date: '2024-05-16', views: '87,543' },
-  { rank: 4, title: '职场沟通的5个关键点',     date: '2024-05-15', views: '76,432' },
-  { rank: 5, title: '如何用AI提升创作效率',     date: '2024-05-14', views: '65,221' },
+  { rank: 4, title: '職場溝通的5個關鍵點',     date: '2024-05-15', views: '76,432' },
+  { rank: 5, title: '如何用AI提升創作效率',     date: '2024-05-14', views: '65,221' },
 ]
 
-// 来源渠道
+// 來源渠道
 const CHANNELS = [
   { name: '推薦頁', current: 68.7, last: 56.7, pct: '53.4%', trend: '+21.3%' },
   { name: '關注頁', current: 28.6, last: 24.8, pct: '22.2%', trend: '+15.7%' },
@@ -56,17 +56,17 @@ const CHANNELS = [
   { name: '其他',   current: 14.5, last: 15.0, pct: '11.3%', trend: '-3.2%' },
 ]
 
-// 关键指标
+// 關鍵指標
 const KEY_METRICS = [
   { label: '完播率', value: '48.7%', trend: '+6.3%', up: true, miniTrend: [42,44,45,47,46,48,49] },
   { label: '互動率', value: '6.2%',  trend: '+1.1%', up: true, miniTrend: [5.0,5.2,5.4,5.8,5.9,6.0,6.2] },
   { label: '平均播放時長', value: '42秒', trend: '+7.8%', up: true, miniTrend: [38,39,40,41,41,42,43] },
 ]
 
-// 热力图数据（24h × 7d）
-const HEATMAP_DAYS = ['周一','周二','周三','周四','周五','周六','周日']
+// 熱力圖數據（24h × 7d）
+const HEATMAP_DAYS = ['週一','週二','週三','週四','週五','週六','週日']
 function heatLevel(h:number,d:number):number {
-  // 模拟：工作日晚间活跃，周末全天活跃
+  // 模擬：工作日晚間活躍，週末全天活躍
   const base = d>=5 ? 60 : ((h>=19 && h<=23) || (h>=7 && h<=9)) ? 70 : 20
   return Math.min(100, Math.max(0, base + Math.round((Math.sin(h/3+d)*30))))
 }
@@ -143,7 +143,7 @@ export default function AnalyticsPage() {
               <ChevronLeft className="w-3.5 h-3.5" /> 創作中心 / 數據分析
             </Link>
             <h1 className="text-xl font-bold text-gray-900">數據分析</h1>
-            <p className="text-[13px] text-gray-500 mt-0.5">全面了解您的內容表現，洞察數據驅動增長</p>
+            <p className="text-[13px] text-gray-500 mt-0.5">全面瞭解您的內容表現，洞察數據驅動增長</p>
           </div>
           <div className="flex items-center gap-2.5 flex-wrap">
             <button className="flex items-center gap-1.5 text-[12.5px] text-gray-700 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50">
@@ -182,9 +182,9 @@ export default function AnalyticsPage() {
           })}
         </div>
 
-        {/* ===== 数据趋势 + 实时数据 ===== */}
+        {/* ===== 數據趨勢 + 實時數據 ===== */}
         <div className="grid grid-cols-12 gap-5">
-          {/* 趋势图 */}
+          {/* 趨勢圖 */}
           <div className="col-span-8 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="text-[14.5px] font-bold text-gray-800">數據趨勢</div>
@@ -199,7 +199,7 @@ export default function AnalyticsPage() {
                 </select>
               </div>
             </div>
-            {/* Tab 切换 */}
+            {/* Tab 切換 */}
             <div className="flex items-center gap-4 text-[13px]">
               {[{k:'views',l:'播放量'},{k:'likes',l:'點贊量'},{k:'comments',l:'評論量'},{k:'shares',l:'分享量'},{k:'fans',l:'漲粉數'}].map(t =>
                 <button key={t.k} onClick={()=>setTrendTab(t.k as any)}
@@ -242,11 +242,11 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* 实时数据 */}
+          {/* 實時數據 */}
           <div className="col-span-4 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
             <div className="flex items-center justify-between">
               <div className="text-[14.5px] font-bold text-gray-800">實時數據（今日）</div>
-              <div className="flex items-center gap-1 text-[11px] text-gray-400"><RefreshCw className="w-3 h-3"/> 更新于 14:30</div>
+              <div className="flex items-center gap-1 text-[11px] text-gray-400"><RefreshCw className="w-3 h-3"/> 更新於 14:30</div>
             </div>
             <div className="space-y-3">
               {REALTIME_DATA.map(r => (
@@ -264,9 +264,9 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* ===== 第二行：内容类型 + TOP排行 + 用户画像 ===== */}
+        {/* ===== 第二行：內容類型 + TOP排行 + 用戶畫像 ===== */}
         <div className="grid grid-cols-12 gap-5">
-          {/* 内容类型 */}
+          {/* 內容類型 */}
           <div className="col-span-4 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
             <div className="text-[14.5px] font-bold text-gray-800">內容類型表現</div>
             <div className="flex justify-center">
@@ -327,18 +327,18 @@ export default function AnalyticsPage() {
             </button>
           </div>
 
-          {/* 用户画像 */}
+          {/* 用戶畫像 */}
           <div className="col-span-4 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
             <div className="text-[14.5px] font-bold text-gray-800">用戶畫像</div>
             <div className="flex items-center gap-2 text-[12px]">
-              {[{k:'gender',l:'性別分布'},{k:'age',l:'年齡分布'},{k:'active',l:'活躍分布'}].map(t =>
+              {[{k:'gender',l:'性別分佈'},{k:'age',l:'年齡分佈'},{k:'active',l:'活躍分佈'}].map(t =>
                 <button key={t.k} onClick={()=>setUserTab(t.k as any)}
                   className={'px-3 py-1 rounded-full border transition-all ' +
                     (userTab===t.k ? 'border-violet-200 bg-violet-50 text-violet-600' : 'border-gray-200 text-gray-500 hover:bg-gray-50')}>{t.l}
                 </button>
               )}
             </div>
-            {/* 性别分布（默认 tab） */}
+            {/* 性別分佈（默認 tab） */}
             <div className="flex justify-center py-2">
               <GenderPie/>
             </div>
@@ -346,9 +346,9 @@ export default function AnalyticsPage() {
               <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-violet-500"/> 男性 <span className="font-semibold text-gray-800 ml-1">62.3%</span></div>
               <div className="flex items-center gap-2"><span className="w-3 h-3 rounded-full bg-pink-400"/> 女性 <span className="font-semibold text-gray-800 ml-1">37.7%</span></div>
             </div>
-            {/* 活跃时间分布热力图 */}
+            {/* 活躍時間分佈熱力圖 */}
             <div className="pt-2">
-              <div className="text-[12px] text-gray-500 mb-2">活躍時間分布</div>
+              <div className="text-[12px] text-gray-500 mb-2">活躍時間分佈</div>
               <div className="overflow-x-auto">
                 <table className="w-full text-[9px]" cellSpacing="1">
                   <thead>
@@ -380,9 +380,9 @@ export default function AnalyticsPage() {
           </div>
         </div>
 
-        {/* ===== 第三行：来源渠道 + 关键指标对比 ===== */}
+        {/* ===== 第三行：來源渠道 + 關鍵指標對比 ===== */}
         <div className="grid grid-cols-12 gap-5">
-          {/* 来源渠道 */}
+          {/* 來源渠道 */}
           <div className="col-span-7 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
             <div className="text-[14.5px] font-bold text-gray-800">來源渠道分析</div>
             <div className="grid grid-cols-5 gap-3 text-[11.5px] text-gray-500 font-medium pb-2">
@@ -407,7 +407,7 @@ export default function AnalyticsPage() {
             </div>
           </div>
 
-          {/* 关键指标对比 */}
+          {/* 關鍵指標對比 */}
           <div className="col-span-5 rounded-xl bg-white border border-gray-100 p-5 space-y-4">
             <div className="text-[14.5px] font-bold text-gray-800">關鍵指標對比</div>
             <div className="space-y-5">

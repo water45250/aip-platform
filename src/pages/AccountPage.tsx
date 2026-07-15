@@ -9,7 +9,7 @@ import {
   Settings, Bell,
 } from 'lucide-react'
 
-// ============ Tab 定义 ============
+// ============ Tab 定義 ============
 const TABS = [
   { key: 'profile', label: '帳號資��', icon: User },
   { key: 'security', label: '安全設置', icon: Lock },
@@ -19,7 +19,7 @@ const TABS = [
 ] as const
 type TabKey = typeof TABS[number]['key']
 
-// ============ 绑定账号数据 ============
+// ============ 綁定賬號數據 ============
 interface BindAccount {
   id: string
   platform: string
@@ -92,12 +92,12 @@ export default function AccountPage() {
 
         {/* ===== Tab Content ===== */}
 
-        {/* --- 账号信息（默认视图） --- */}
+        {/* --- 賬號信息（默認視圖） --- */}
         {(activeTab === 'profile' || activeTab === 'security' || activeTab === 'bind') && (
           <>
-            {/* 上排：个人资料 + 账号安全 */}
+            {/* 上排：個人資料 + 賬號安全 */}
             <div className="grid grid-cols-12 gap-5">
-              {/* 左：个人资料 */}
+              {/* 左：個人資料 */}
               <div className="col-span-7 rounded-xl bg-white border border-gray-100 p-6 space-y-5">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[15px] font-bold text-gray-800">個人資料</h3>
@@ -105,10 +105,10 @@ export default function AccountPage() {
                 </div>
 
                 <div className="flex items-start gap-6">
-                  {/* 头像 */}
+                  {/* 頭像 */}
                   <div className="relative group shrink-0">
                     <div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-200 to-cyan-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
-                      {/* 模拟头像 */}
+                      {/* 模擬頭像 */}
                       <div className="w-full h-full bg-cover bg-center"
                         style={{backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='112'%3E%3Crect fill='%23ddd6fe'/%3E%3Ccircle cx='56' cy='42' r='20' fill='%23a78bfa'/%3E%3Cellipse cx='56' cy='90' rx='30' ry='24' fill='%23a78bfa'/%3E%3C/svg%3E")`}}
                       />
@@ -157,7 +157,7 @@ export default function AccountPage() {
                 </div>
               </div>
 
-              {/* 右：账号安全 */}
+              {/* 右：賬號安全 */}
               <div className="col-span-5 rounded-xl bg-white border border-gray-100 p-6 space-y-4">
                 <h3 className="text-[15px] font-bold text-gray-800">帳號安全</h3>
 
@@ -195,9 +195,9 @@ export default function AccountPage() {
               </div>
             </div>
 
-            {/* 下排：账号统计 + 套餐资源使用 */}
+            {/* 下排：賬號統計 + 套餐資源使用 */}
             <div className="grid grid-cols-12 gap-5">
-              {/* 账号统计 */}
+              {/* 賬號統計 */}
               <div className="col-span-7 rounded-xl bg-white border border-gray-100 p-6 space-y-4">
                 <h3 className="text-[15px] font-bold text-gray-800">帳號統計</h3>
                 <div className="grid grid-cols-4 gap-3">
@@ -224,14 +224,14 @@ export default function AccountPage() {
                 </div>
               </div>
 
-              {/* 套餐与资源使用 */}
+              {/* 套餐與資源使用 */}
               <div className="col-span-5 rounded-xl bg-white border border-gray-100 p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[15px] font-bold text-gray-800">套餐與資源使用</h3>
                   <button className="text-[12px] text-violet-600 hover:text-violet-700 font-medium flex items-center gap-0.5">查看詳情 <ArrowRight className="w-3.5 h-3.5"/></button>
                 </div>
 
-                {/* 会员卡片 */}
+                {/* 會員卡片 */}
                 <div className="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
                     <Crown className="w-5 h-5 text-amber-500"/>
@@ -243,13 +243,13 @@ export default function AccountPage() {
                   <button className="text-[12px] font-medium text-white bg-violet-600 rounded-lg px-4 py-1.5 hover:bg-violet-700">續費升級</button>
                 </div>
 
-                {/* 额度进度条 */}
+                {/* 額度進度條 */}
                 <div className="space-y-3">
                 {[
                   { label: '視頻生成額度', pct: 57 },
                   { label: '數字人生成時長', used: 320, total: 800, unit: '分鐘', pct: 53 },
                   { label: 'AI 配額額度', used: 2800, total: 5000, unit: '字' },
-                  { label: '云存儲空間', used: 12.6, total: 50, unit: 'GB', pct: 25 },
+                  { label: '雲存儲空間', used: 12.6, total: 50, unit: 'GB', pct: 25 },
                 ].map((item,i) => {
                   const displayPct = item.pct ?? Math.round(item.used! / item.total! * 100)
                   return (
@@ -273,7 +273,7 @@ export default function AccountPage() {
               </div>
             </div>
 
-            {/* 底部：账号绑定 */}
+            {/* 底部：賬號綁定 */}
             <div className="rounded-xl bg-white border border-gray-100 p-6 space-y-4">
               <h3 className="text-[15px] font-bold text-gray-800">帳號綁定</h3>
               <div className="grid grid-cols-5 gap-4">
@@ -295,7 +295,7 @@ export default function AccountPage() {
                     ) : null}
                   </div>
                 ))}
-                {/* 绑定更多 */}
+                {/* 綁定更多 */}
                 <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center flex flex-col items-center justify-center hover:border-violet-300 cursor-pointer transition-all">
                   <Plus className="w-6 h-6 text-gray-300 mb-1"/>
                   <div className="text-[12.5px] text-violet-600 font-medium">綁定更多</div>
@@ -305,14 +305,14 @@ export default function AccountPage() {
           </>
         )}
 
-        {/* --- 我的偏好（独立 tab） --- */}
+        {/* --- 我的偏好（獨立 tab） --- */}
         {activeTab === 'prefs' && (
           <div className="rounded-xl bg-white border border-gray-100 p-6 space-y-5">
             <h3 className="text-[15px] font-bold text-gray-800">我的偏好</h3>
             {[
-              { title: '界面語言', options: ['繁體中文','简体中文','English'], current: '繁體中文' },
+              { title: '界面語言', options: ['繁體中文','簡體中文','English'], current: '繁體中文' },
               { title: '主題風格', options: ['淺色主題','深色主題','跟隨系統'], current: '淺色主題' },
-              { title: '默認發布平台', options: ['抖音','微信公眾號','視頻號','小紅書','B站'], current: '抖音' },
+              { title: '默認發布平臺', options: ['抖音','微信公眾號','視頻號','小紅書','B站'], current: '抖音' },
               { title: '數字人默認形象', options: ['知性女主播','商務男主播','親和女主播'], current: '知性女主播' },
               { title: '視頻默認比例', options: ['9:16 (豎版)','16:9 (橫版)','1:1 (方形)'], current: '9:16 (豎版)' },
               { title: '自動保存草稿', options: ['開啟','關閉'], current: '開啟' },
@@ -329,7 +329,7 @@ export default function AccountPage() {
           </div>
         )}
 
-        {/* --- 通知设置（独立 tab） --- */}
+        {/* --- 通知設置（獨立 tab） --- */}
         {activeTab === 'notify' && (
           <div className="rounded-xl bg-white border border-gray-100 p-6 space-y-5 max-w-[720px]">
             <h3 className="text-[15px] font-bold text-gray-800">通知設置</h3>
@@ -343,7 +343,7 @@ export default function AccountPage() {
                 { cat: '業務通知', items: [
                   { label: '視頻生成完成', desc: '數字人/OpenMontage 視頻生成完成後通知', on: true },
                   { label: '聲音克隆完成', desc: '語音克隆訓練完成後通知', on: true },
-                  { label: '發佈結果回調', desc: '一鍵發佈各平台結果通知', on: true },
+                  { label: '發佈結果回調', desc: '一鍵發佈各平臺結果通知', on: true },
                   { label: '會員到期提醒', desc: '尊享會員到期前 7 天提醒續費', on: true },
                 ]},
                 { cat: '營銷消息', items: [
