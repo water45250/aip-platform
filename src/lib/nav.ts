@@ -1,5 +1,5 @@
 import {
-  Home, Lightbulb, FileText, Mic, MonitorPlay, Scissors, Eye, Bot,
+  Home, Lightbulb, FileText, Mic, MonitorPlay, GraduationCap, Eye, Bot,
   Send, BarChart3, User, Award, LayoutGrid, FolderPlus, Receipt,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
@@ -31,7 +31,7 @@ export const navSections: NavSection[] = [
       { label: '聲音克隆', path: '/voice-clone', icon: Mic },
       { label: '數字人視頻', path: '/digital-human', icon: Bot },
       { label: '動畫生成', path: '/video-generation', icon: MonitorPlay },
-      { label: '智能剪輯', path: '/smart-editing', icon: Scissors },
+      { label: '課程工坊', path: '/course-workshop', icon: GraduationCap },
       { label: '成品預覽', path: '/final-preview', icon: Eye },
     ],
   },

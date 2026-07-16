@@ -7,7 +7,7 @@ import ScriptCreationPage from './pages/ScriptCreationPage'
 import VideoGenerationPage from './pages/VideoGenerationPage'
 import VoiceClonePage from './pages/VoiceClonePage'
 import DigitalHumanPage from './pages/DigitalHumanPage'
-import SmartEditingPage from './pages/SmartEditingPage'
+import CourseWorkshopPage from './pages/CourseWorkshopPage'
 import FinalPreviewPage from './pages/FinalPreviewPage'
 import PublishPage from './pages/PublishPage'
 import AnalyticsPage from './pages/AnalyticsPage'
@@ -27,7 +27,7 @@ function App() {
         <Route path="video-generation" element={<VideoGenerationPage />} />
         <Route path="voice-clone" element={<VoiceClonePage />} />
         <Route path="digital-human" element={<DigitalHumanPage />} />
-        <Route path="smart-editing" element={<SmartEditingPage />} />
+        <Route path="course-workshop" element={<CourseWorkshopPage />} />
         <Route path="final-preview" element={<FinalPreviewPage />} />
         <Route path="publish" element={<PublishPage />} />
         <Route path="analytics" element={<AnalyticsPage />} />
