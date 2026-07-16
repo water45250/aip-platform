@@ -10,7 +10,7 @@ import {
 } from 'lucide-react'
 
 /* ============ API 基址 ============ */
-const API_BASE: string = (import.meta as any).env?.VITE_API_BASE_URL ?? ''
+const API_BASE: string = (import.meta as any).env?.VITE_API_BASE_URL ?? '/aip'
 const ENGINE_LABEL = 'CosyVoice2-0.5B'
 
 /* ============ 資料模型 ============ */
