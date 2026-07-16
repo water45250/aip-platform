@@ -120,7 +120,15 @@ export default function CourseWorkshopPage() {
         const d = await r.json()
         if (!active) return
         setStages(d.stages ?? [])
-        setPendingHitl(d.current_hitl ?? null)
+        // 双保险：asking 阶段（需求解析未完成，pendingHitl 应为 null）不应被后续 HITL
+        // 确认点覆盖，否则会与 sendMessage 状态冲突导致输入框竞态消失。
+        const nextHitl = d.current_hitl ?? null
+        setPendingHitl((prev) => {
+          if (prev == null && nextHitl != null && nextHitl.hitl_id !== "HITL-1") {
+            return prev // 忽略 asking 阶段误报的后续 HITL，保持输入框可见
+          }
+          return nextHitl
+        })
         setIsComplete(!!d.is_complete)
       } catch { /* 靜默重試 */ }
     }
