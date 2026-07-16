@@ -184,7 +184,7 @@ export default function CourseWorkshopPage() {
   const sendMessage = async () => {
     const text = input.trim()
     if (!text || !sessionId || loading) return
-    setInput(''); setLoading(true); setError(null)
+    setLoading(true); setError(null)
     pushMsg({ role: 'user', content: text })
     try {
       const r = await fetch(`${API_BASE}/api/course/${sessionId}/message`, {
@@ -192,11 +192,16 @@ export default function CourseWorkshopPage() {
         body: JSON.stringify({ message: text }),
       })
       const j = await r.json().catch(() => ({}))
-      if (!r.ok) { showError(`發送失敗 (${r.status})${j?.detail ? '：' + JSON.stringify(j.detail) : ''}`); return }
+      if (!r.ok) {
+        // 发送失败：保留用户输入原文，便于用户修正后重试（避免 400/网络错误吞掉内容）
+        showError(`發送失敗 (${r.status})${j?.detail ? '：' + JSON.stringify(j.detail) : ''}`)
+        return
+      }
       if (j.agent_message) pushMsg({ role: 'assistant', content: j.agent_message })
       if (j.profile) setProfile(j.profile)
       setPendingHitl(j.hitl ?? null)
       setNeedFollowup(j.need_followup ?? false)
+      setInput('') // 仅成功发送后清空输入框
   }
     finally { setLoading(false) }
   }
@@ -353,7 +358,7 @@ export default function CourseWorkshopPage() {
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              {(pendingHitl == null || needFollowup) && !isComplete ? (
+              {(pendingHitl == null || needFollowup || (pendingHitl?.hitl_id === "HITL-1")) && !isComplete ? (
                 <div className="mt-3 flex gap-2">
                   <input
                     value={input} onChange={(e) => setInput(e.target.value)}
