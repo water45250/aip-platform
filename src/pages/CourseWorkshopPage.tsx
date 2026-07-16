@@ -87,6 +87,7 @@ export default function CourseWorkshopPage() {
   const [input, setInput] = useState('')
   const [pendingHitl, setPendingHitl] = useState<HitlInfo>(null)
   const [isComplete, setIsComplete] = useState(false)
+  const [needFollowup, setNeedFollowup] = useState(false)
   const [stages, setStages] = useState<{ name: string; label: string; status: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -166,6 +167,7 @@ export default function CourseWorkshopPage() {
         { role: 'assistant', content: j.agent_message || '（無回覆）' },
       ])
       setPendingHitl(j.hitl ?? null)
+      setNeedFollowup(j.need_followup ?? false)
     } catch (e) { showError('網絡錯誤：' + (e instanceof Error ? e.message : String(e))) }
     finally { setLoading(false) }
   }
@@ -186,7 +188,8 @@ export default function CourseWorkshopPage() {
       if (j.agent_message) pushMsg({ role: 'assistant', content: j.agent_message })
       if (j.profile) setProfile(j.profile)
       setPendingHitl(j.hitl ?? null)
-    } catch (e) { showError('網絡錯誤：' + (e instanceof Error ? e.message : String(e))) }
+      setNeedFollowup(j.need_followup ?? false)
+  }
     finally { setLoading(false) }
   }
 
@@ -342,7 +345,7 @@ export default function CourseWorkshopPage() {
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              {pendingHitl == null && !isComplete ? (
+              {(pendingHitl == null || needFollowup) && !isComplete ? (
                 <div className="mt-3 flex gap-2">
                   <input
                     value={input} onChange={(e) => setInput(e.target.value)}
