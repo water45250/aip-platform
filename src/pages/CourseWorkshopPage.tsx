@@ -157,12 +157,22 @@ export default function CourseWorkshopPage() {
         const d = await r.json()
         if (!active) return
         setStages(d.stages ?? [])
-        // 双保险：asking 阶段（需求解析未完成，pendingHitl 应为 null）不应被后续 HITL
-        // 确认点覆盖，否则会与 sendMessage 状态冲突导致输入框竞态消失。
+        // v15: 同步 pendingHitl，防止状态回退（后端 v14 自动推进多个节点时，
+        // 轮询可能拿到中间状态的旧 HITL，导致右侧面板显示已过的确认点）
         const nextHitl = d.current_hitl ?? null
+        const hitlOrder = (id: string | undefined) => {
+          if (!id) return -1
+          const m: Record<string, number> = {'HITL-1':1,'HITL-2':2,'HITL-3':3,'HITL-4':4,'HITL-5':5,'HITL-6':6,'HITL-7':7}
+          return m[id] ?? 0
+        }
         setPendingHitl((prev) => {
+          // v5 保留：asking 阶段不显示后续 HITL（保持输入框可见）
           if (prev == null && nextHitl != null && nextHitl.hitl_id !== "HITL-1") {
-            return prev // 忽略 asking 阶段误报的后续 HITL，保持输入框可见
+            return prev
+          }
+          // v15: 不允许回退到更早的 HITL（防止轮询旧数据覆盖新状态）
+          if (prev != null && nextHitl != null && hitlOrder(nextHitl.hitl_id) < hitlOrder(prev.hitl_id)) {
+            return prev
           }
           return nextHitl
         })
@@ -432,7 +442,7 @@ export default function CourseWorkshopPage() {
               <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> DeepSeek 真實生成
               </span>
-              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v11-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
+              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v15-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
