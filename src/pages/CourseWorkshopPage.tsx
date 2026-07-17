@@ -1,4 +1,4 @@
-import { useState, useEffect, useRef, useCallback } from 'react'
+import { useState, useEffect, useRef, useCallback, Component, type ReactNode } from 'react'
 import { Link } from 'react-router-dom'
 import {
   GraduationCap, Sparkles, Send, Loader2, CheckCircle2,
@@ -6,6 +6,37 @@ import {
   History, X, SkipForward, Wand2,
   ListChecks, Plus, RotateCcw, ChevronDown, FileText, Cpu,
 } from 'lucide-react'
+
+// ============================================================
+// ErrorBoundary：防止单个子组件崩溃导致整棵樹（含輸入框）不渲染
+// ============================================================
+class InputErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
+  constructor(props: { children: ReactNode }) {
+    super(props)
+    this.state = { hasError: false }
+  }
+  static getDerivedStateFromError() {
+    return { hasError: true }
+  }
+  componentDidCatch(err: Error, info: React.ErrorInfo) {
+    console.error('[InputErrorBoundary]', err.message, info.componentStack)
+  }
+  render() {
+    if (this.state.hasError) {
+      return (
+        <div className="mt-3 flex gap-2">
+          <input
+            defaultValue=""
+            placeholder="回覆 AI 的追問，推進需求解析…（上方對話區發生渲染錯誤，輸入框仍可用）"
+            className="flex-1 rounded-xl border border-red-200 px-3.5 py-2.5 text-[13px] outline-none focus:border-violet-400 text-red-700 bg-red-50"
+            id="fallback-input"
+          />
+        </div>
+      )
+    }
+    return this.props.children
+  }
+}
 
 /* ============================================================
  * 課程工坊（Course Workshop）
@@ -297,6 +328,7 @@ export default function CourseWorkshopPage() {
               <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> DeepSeek 真實生成
               </span>
+              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v5-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -348,6 +380,7 @@ export default function CourseWorkshopPage() {
             {/* 左：對話流 */}
             <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5 flex flex-col min-h-[360px]">
               <h2 className="text-sm font-bold text-gray-900 mb-3">AI 協作對話</h2>
+              <InputErrorBoundary>
               <div className="flex-1 space-y-3 overflow-y-auto max-h-[420px] pr-1">
                 {messages.map((m, i) => (
                   <div key={i} className={m.role === 'user' ? 'flex justify-end' : m.role === 'system' ? 'flex justify-center' : 'flex justify-start'}>
@@ -360,9 +393,10 @@ export default function CourseWorkshopPage() {
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              {!isComplete && (
-                <>
-                  {pendingHitl && pendingHitl.hitl_id !== "HITL-1" && (
+              {/* 输入框常驻：无条件渲染，确保任何状态下用户都能输入。
+                  即使 isComplete=true 或任意 HITL 状态，输入框始终可见可用。 */}
+              <>
+                {pendingHitl && pendingHitl.hitl_id !== "HITL-1" && (
                     <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-2 text-[12px]">
                       <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
                       <span>AI 已生成「{pendingHitl.label}」產出，請在右側確認、修改或跳過，確認後才會進入下一節點。</span>
@@ -380,7 +414,7 @@ export default function CourseWorkshopPage() {
                     </button>
                   </div>
                 </>
-              )}
+              </InputErrorBoundary>
             </div>
 
             {/* 右：HITL / 完成 */}
