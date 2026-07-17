@@ -432,7 +432,7 @@ export default function CourseWorkshopPage() {
               <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> DeepSeek 真實生成
               </span>
-              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v10-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
+              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v11-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -480,7 +480,7 @@ export default function CourseWorkshopPage() {
         )}
 
         {sessionId && (
-          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5">
+          <div className="grid grid-cols-1 lg:grid-cols-3 gap-5 items-start">
             {/* 左：對話流 */}
             <div className="lg:col-span-2 bg-white rounded-xl border border-gray-100 p-5 flex flex-col min-h-[360px]">
               <h2 className="text-sm font-bold text-gray-900 mb-3">AI 協作對話</h2>
