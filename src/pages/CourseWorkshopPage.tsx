@@ -382,14 +382,14 @@ export default function CourseWorkshopPage() {
             {profile ? (
               <div className="space-y-1.5 max-h-[260px] overflow-y-auto">
                 {rows.map(r => (
-                  <div key={r.key} className="flex gap-2 text-[12.5px] leading-relaxed">
-                    <span className="shrink-0 text-gray-400 w-[68px]">{r.label}</span>
+                  <div key={r.key} className="flex gap-2 text-[12.5px] leading-relaxed items-baseline">
+                    <span className="shrink-0 text-gray-400 whitespace-nowrap">{r.label}</span>
                     <span className="text-gray-800 font-medium flex-1">{String(r.val)}</span>
                   </div>
                 ))}
                 {extras.map(([k, v]: [string, any]) => (
-                  <div key={k} className="flex gap-2 text-[12.5px] leading-relaxed">
-                    <span className="shrink-0 text-gray-400 w-[68px]">{k}</span>
+                  <div key={k} className="flex gap-2 text-[12.5px] leading-relaxed items-baseline">
+                    <span className="shrink-0 text-gray-400 whitespace-nowrap">{k}</span>
                     <span className="text-gray-800 font-medium flex-1">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
                   </div>
                 ))}
@@ -432,7 +432,7 @@ export default function CourseWorkshopPage() {
               <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> DeepSeek 真實生成
               </span>
-              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v9-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
+              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v10-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
