@@ -404,7 +404,7 @@ export default function CourseWorkshopPage() {
               <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> DeepSeek 真實生成
               </span>
-              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v7-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
+              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v8-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -655,9 +655,11 @@ function actionLabel(a: string): string {
   return { confirm: '確認', skip: '跳過', regenerate: '重新生成', edit: '編輯', skip_all: '一鍵跳過全部' }[a] ?? a
 }
 
-// 內容渲染
+// 內容渲染（每種類型以人類可讀格式呈現，不裸 JSON）
 function ContentViewer({ type, data }: { type: string; data: any }) {
   if (data == null) return <p className="text-gray-400 text-[12px]">（暫無內容）</p>
+
+  // ── 課程大綱（已有，保持不變） ──
   if (type === 'outline' && data.modules) {
     return (
       <div className="space-y-3">
@@ -685,6 +687,8 @@ function ContentViewer({ type, data }: { type: string; data: any }) {
       </div>
     )
   }
+
+  // ── 審核報告（已有，保持不變） ──
   if (type === 'review' && data.dimensions) {
     return (
       <div className="space-y-2">
@@ -699,6 +703,228 @@ function ContentViewer({ type, data }: { type: string; data: any }) {
       </div>
     )
   }
+  // ── IP 定位報告（可讀化：定位宣言 / 差異標籤 / 內容矩陣 / 飛輪） ──
+  if (type === 'ip_report') {
+    const items: { label: string; value: React.ReactNode }[] = []
+    // 一句話定位
+    if (data.positioning_statement)
+      items.push({ label: '🎯 定位宣言', value: <span className="text-[13px] font-medium text-gray-900">{data.positioning_statement}</span> })
+    // 差異化標籤
+    if (Array.isArray(data.differentiation_tags) && data.differentiation_tags.length > 0) {
+      items.push({
+        label: '✨ 差異化標籤',
+        value: <div className="flex flex-wrap gap-1.5">
+          {data.differentiation_tags.map((t: string, i: number) => (
+            <span key={i} className="text-[11.5px] bg-violet-50 text-violet-700 border border-violet-200 px-2 py-0.5 rounded-full">{t}</span>
+          ))}
+        </div>,
+      })
+    }
+    // 內容矩陣
+    if (data.content_matrix) {
+      const cm = data.content_matrix
+      items.push({
+        label: '📊 內容矩陣',
+        value: (
+          <div className="space-y-1 text-[12px] text-gray-700">
+            {cm.platforms && <div><span className="text-gray-400">平台：</span>{String(cm.platforms)}</div>}
+            {cm.content_types && <div><span className="text-gray-400">內容形式：</span>{String(cm.content_types)}</div>}
+            {cm.frequency && <div><span className="text-gray-400">更新頻率：</span>{String(cm.frequency)}</div>}
+          </div>
+        ),
+      })
+    }
+    // 飛輪/步驟（截圖中看到的 trust_flywheel 結構）
+    const flywheelKey = Object.keys(data).find(k => Array.isArray(data[k]) && data[k][0]?.step)
+    if (flywheelKey) {
+      items.push({
+        label: '🔄 增長飛輪',
+        value: (
+          <div className="space-y-2">
+            {(data[flywheelKey] as any[]).map((step, i) => (
+              <div key={i} className="flex gap-3 items-start rounded-lg bg-white border border-gray-100 p-2.5">
+                <span className="shrink-0 w-6 h-6 flex items-center justify-center rounded-full bg-violet-100 text-violet-700 text-[11px] font-bold">{step.step ?? i + 1}</span>
+                <div className="min-w-0">
+                  <div className="text-[12.5px] font-medium text-gray-800 leading-snug">{step.action}</div>
+                  {step.goal && <div className="text-[11.5px] text-gray-500 mt-0.5">→ 目標：{step.goal}</div>}
+                </div>
+              </div>
+            ))}
+          </div>
+        ),
+      })
+    }
+    // 其他未識別字段用可讀摘要兜底
+    const knownKeys = new Set(['positioning_statement', 'differentiation_tags', 'content_matrix', flywheelKey])
+    const extra = Object.entries(data).filter(([k]) => !knownKeys.has(k))
+    if (extra.length > 0) {
+      items.push(...extra.map(([k, v]: [string, any]) => ({
+        label: k,
+        value: typeof v === 'string'
+          ? <pre className="whitespace-pre-wrap font-sans text-[12px] text-gray-600">{v}</pre>
+          : <pre className="whitespace-pre-wrap font-sans text-[11.5px] text-gray-600 max-h-[200px] overflow-y-auto">{JSON.stringify(v, null, 2)}</pre>,
+      })))
+    }
+
+    return items.length > 0 ? (
+      <div className="space-y-3">
+        {items.map((item, i) => (
+          <div key={i}>
+            <div className="text-[11.5px] font-semibold text-violet-600 mb-1">{item.label}</div>
+            <div>{item.value}</div>
+          </div>
+        ))}
+      </div>
+    ) : <p className="text-gray-400 text-[12px]">（暫無 IP 定位數據）</p>
+  }
+
+  // ── 講稿（按課時展示） ──
+  if (type === 'scripts') {
+    if (Array.isArray(data)) {
+      return (
+        <div className="space-y-2.5">
+          {data.map((item: any, i: number) => (
+            <div key={i} className="rounded-lg border border-gray-100 p-3">
+              <div className="text-[12.5px] font-semibold text-gray-800 mb-1">
+                {item.title || item.lesson_title || `講稿 ${i + 1}`}
+              </div>
+              {item.module && <span className="text-[10.5px] text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded mr-1.5">{item.module}</span>}
+              {(typeof item.content === 'string' ? item.content : item.script || item.body) && (
+                <p className="text-[12px] text-gray-600 mt-1.5 leading-relaxed line-clamp-4">
+                  {(typeof item.content === 'string' ? item.content : item.script || item.body || '').slice(0, 300)}{(item.content?.length > 300 ? '…' : '')}
+                </p>
+              )}
+              {item.duration_minutes && <span className="text-[10.5px] text-gray-400 ml-auto">{item.duration_minutes}′</span>}
+            </div>
+          ))}
+        </div>
+      )
+    }
+    if (typeof data === 'object') {
+      // 對象形式：{ "M1L1": {...}, ... }
+      return (
+        <div className="space-y-2.5">
+          {Object.entries(data).map(([key, val]: [string, any], i) => (
+            <div key={i} className="rounded-lg border border-gray-100 p-3">
+              <div className="text-[12.5px] font-semibold text-gray-800 mb-1">{val.title || key}</div>
+              {val.script && <p className="text-[12px] text-gray-600 mt-1 leading-relaxed line-clamp-4">{String(val.script).slice(0, 300)}…</p>}
+            </div>
+          ))}
+        </div>
+      )
+    }
+  }
+
+  // ── 課件 ──
+  if (type === 'slides') {
+    const entries = Array.isArray(data) ? data : (typeof data === 'object' ? Object.entries(data).map(([k, v]: [string, any]) => ({ ...v, _key: k })) : [])
+    if (entries.length > 0) {
+      return (
+        <div className="space-y-2">
+          {entries.map((item: any, i: number) => (
+            <div key={i} className="flex items-center gap-2 rounded-lg border border-gray-100 p-2.5 text-[12px] text-gray-700">
+              <span className="shrink-0 w-7 h-7 flex items-center justify-center rounded bg-blue-50 text-blue-600 text-[10px] font-bold">PPT</span>
+              <span className="font-medium truncate">{item.title || item._key || `課件 ${i + 1}`}</span>
+              {item.slide_count && <span className="text-gray-400 ml-auto">{item.slide_count} 頁</span>}
+            </div>
+          ))}
+        </div>
+      )
+    }
+  }
+
+  // ── 實戰案例 ──
+  if (type === 'cases') {
+    const entries = Array.isArray(data) ? data : []
+    if (entries.length > 0) {
+      return (
+        <div className="space-y-2.5">
+          {entries.map((c: any, i: number) => (
+            <div key={i} className="rounded-lg border border-amber-100 bg-amber-50/40 p-3">
+              <div className="text-[12.5px] font-semibold text-gray-800 mb-1">案例 {i + 1}：{c.title || c.case_name || ''}</div>
+              {c.context && <p className="text-[12px] text-gray-600"><span className="text-gray-400">背景：</span>{c.context}</p>}
+              {c.action && <p className="text-[12px] text-gray-600 mt-1"><span className="text-gray-400">做法：</span>{c.action}</p>}
+              {c.result && <p className="text-[12px] text-emerald-700 mt-1"><span className="text-gray-400">效果：</span>{c.result}</p>}
+            </div>
+          ))}
+        </div>
+      )
+    }
+  }
+
+  // ── 營銷文案 ──
+  if (type === 'marketing') {
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      return (
+        <div className="space-y-3">
+          {Object.entries(data).map(([k, v]: [string, any]) => (
+            <div key={k}>
+              <div className="text-[11.5px] font-semibold text-violet-600 mb-1 capitalize">{k.replace(/_/g, ' ')}</div>
+              <div className="text-[12.5px] text-gray-700 leading-relaxed whitespace-pre-wrap">{typeof v === 'string' ? v : JSON.stringify(v, null, 2)}</div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+    if (typeof data === 'string') {
+      return <pre className="whitespace-pre-wrap font-sans text-[12.5px] leading-relaxed text-gray-700">{data}</pre>
+    }
+  }
+
+  // ── 定價方案 ──
+  if (type === 'pricing') {
+    if (Array.isArray(data)) {
+      return (
+        <div className="space-y-2">
+          {data.map((tier: any, i: number) => (
+            <div key={i} className="rounded-lg border border-emerald-100 p-3 flex items-center gap-4">
+              <div>
+                <div className="text-[14px] font-bold text-emerald-700">{tier.name || tier.tier || `方案${i+1}`}</div>
+                {tier.price !== undefined && <div className="text-[18px] font-extrabold text-gray-900">¥{tier.price}</div>}
+              </div>
+              <div className="flex-1 space-y-0.5 text-[11.5px] text-gray-600">
+                {(tier.features || tier.includes || []).map((f: string, j: number) => (
+                  <div key={j}>✓ {f}</div>
+                ))}
+                {tier.description && <div className="mt-1 text-gray-500">{tier.description}</div>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+    if (typeof data === 'object' && !Array.isArray(data)) {
+      return (
+        <div className="rounded-lg border border-gray-100 p-3 text-[13px] text-gray-800">
+          <div className="text-[16px] font-bold text-emerald-700">¥{data.price ?? data.amount ?? '—'}</div>
+          {data.strategy && <div className="text-[12px] text-gray-500 mt-1">{data.strategy}</div>}
+          {data.tiers && <div className="mt-2 space-y-1">{JSON.stringify(data.tiers)}</div>}
+        </div>
+      )
+    }
+  }
+
+  // ── 音頻 / 視頻 ──
+  if ((type === 'audio' || type === 'video') && typeof data === 'object') {
+    const entries = Array.isArray(data) ? data : (data.files || data.items || Object.values(data))
+    if (Array.isArray(entries) && entries.length > 0) {
+      return (
+        <div className="space-y-2">
+          {entries.map((item: any, i: number) => (
+            <div key={i} className="flex items-center gap-2.5 rounded-lg border border-gray-100 p-2.5 text-[12px]">
+              <span className="shrink-0 w-8 h-8 flex items-center justify-center rounded-full bg-gray-100 text-gray-500 text-[10px]">{type === 'audio' ? '♫' : '▶'}</span>
+              <div className="min-w-0 flex-1">
+                <div className="font-medium text-gray-800 truncate">{item.title || item.name || item.filename || `${type} ${i + 1}`}</div>
+                {item.duration && <span className="text-gray-400">{item.duration}</span>}
+              </div>
+            </div>
+          ))}
+        </div>
+      )
+    }
+  }
+
+  // ── 最終兜底（純文本 / 未知結構） ──
   if (typeof data === 'string') return <pre className="whitespace-pre-wrap font-sans text-[12.5px] leading-relaxed">{data}</pre>
   if (Array.isArray(data)) return (
     <div className="space-y-2">
