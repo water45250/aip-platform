@@ -51,14 +51,16 @@ const API_BASE: string = (import.meta as any).env?.VITE_API_BASE_URL ?? '/aip'
 const USER_ID = 'web-user'
 
 // HITL 元數據（與後端 state.py HITL_DEFINITIONS 對齊）
-const HITL_META: Record<string, { label: string; node: string; content_type: string; edit_field: string | null }> = {
-  'HITL-1': { label: '需求解析確認', node: 'requirement_analysis', content_type: '', edit_field: 'user_profile' },
-  'HITL-2': { label: 'IP 定位確認', node: 'ip_positioning', content_type: 'ip_report', edit_field: 'ip_positioning' },
-  'HITL-3': { label: '課程大綱確認', node: 'course_architecture', content_type: 'outline', edit_field: 'course_outline' },
-  'HITL-4': { label: '內容預覽確認', node: 'content_production_serial', content_type: 'scripts', edit_field: null },
-  'HITL-5': { label: '語音合成確認', node: 'voice_tts', content_type: 'audio', edit_field: null },
-  'HITL-6': { label: '數字人視頻確認', node: 'digital_human', content_type: 'video', edit_field: null },
-  'HITL-7': { label: '審核報告確認', node: 'quality_review', content_type: 'review', edit_field: null },
+// content_type：單一內容類型（用於「編輯內容」時的種子）；
+// types：該確認點要預覽的內容類型數組（HITL 出現時自動拉取並展示）。
+const HITL_META: Record<string, { label: string; node: string; content_type: string; types: string[]; edit_field: string | null }> = {
+  'HITL-1': { label: '需求解析確認', node: 'requirement_analysis', content_type: '', types: [], edit_field: 'user_profile' },
+  'HITL-2': { label: 'IP 定位確認', node: 'ip_positioning', content_type: 'ip_report', types: ['ip_report'], edit_field: 'ip_positioning' },
+  'HITL-3': { label: '課程大綱確認', node: 'course_architecture', content_type: 'outline', types: ['outline'], edit_field: 'course_outline' },
+  'HITL-4': { label: '內容預覽確認', node: 'content_production_serial', content_type: 'scripts', types: ['scripts', 'slides', 'cases'], edit_field: null },
+  'HITL-5': { label: '語音合成確認', node: 'voice_tts', content_type: 'audio', types: ['audio'], edit_field: null },
+  'HITL-6': { label: '數字人視頻確認', node: 'digital_human', content_type: 'video', types: ['video'], edit_field: null },
+  'HITL-7': { label: '審核報告確認', node: 'quality_review', content_type: 'review', types: ['review'], edit_field: null },
 }
 
 // 每個節點「做什麼 / 產出什麼」（解決「不知道節點做啥、有何產出」）
@@ -111,6 +113,9 @@ const TYPE_LABELS: Record<string, string> = {
 type ChatMsg = { role: 'user' | 'assistant' | 'system'; content: string }
 type HitlInfo = { hitl_id: string; label: string; status: string } | null
 
+// 自动拉取的 HITL 内容预览（key=hitl_id, value=fetched data）
+type HitlContentMap = Record<string, any>
+
 export default function CourseWorkshopPage() {
   const [sessionId, setSessionId] = useState<string | null>(null)
   const [profile, setProfile] = useState<any>(null)
@@ -128,6 +133,7 @@ export default function CourseWorkshopPage() {
   const [sessions, setSessions] = useState<any[]>([])
   const [expanded, setExpanded] = useState<string | null>(null)
   const [stageData, setStageData] = useState<Record<string, any>>({})
+  const [hitlContentMap, setHitlContentMap] = useState<HitlContentMap>({})
   const chatEndRef = useRef<HTMLDivElement | null>(null)
 
   const showError = useCallback((msg: string) => {
@@ -167,6 +173,36 @@ export default function CourseWorkshopPage() {
     const id = window.setInterval(tick, 3000)
     return () => { active = false; window.clearInterval(id) }
   }, [sessionId, isComplete])
+
+  // 自動拉取 HITL 内容：當 pendingHitl 出現或變化時，自動抓取對應內容並預覽
+  // 用戶不再需要點「編輯內容後確認」才能看到產出——直接展示。
+  useEffect(() => {
+    if (!pendingHitl || !sessionId) return
+    const hitlId = pendingHitl.hitl_id
+    const meta = HITL_META[hitlId]
+    if (!meta?.types?.length) return // 無 types 的節點（如 HITL-1 需求解析）無需拉取
+
+    let active = true
+    const fetchOne = async (t: string) => {
+      try {
+        const r = await fetch(`${API_BASE}/api/course/${sessionId}/content/${t}`)
+        const d = await r.json().catch(() => ({}))
+        if (!active) return
+        setHitlContentMap((prev) => ({ ...prev, [t]: d?.data ?? null }))
+      } catch { /* 靜默 */ }
+    }
+    const run = async () => {
+      // 首次拉取
+      await Promise.all(meta.types.map(fetchOne))
+      if (!active) return
+      // 延遲補抓：節點剛完成、內容尚未落庫時，2s 後再補一次
+      await new Promise((res) => setTimeout(res, 2000))
+      if (!active) return
+      await Promise.all(meta.types.map(fetchOne))
+    }
+    run()
+    return () => { active = false }
+  }, [pendingHitl?.hitl_id, sessionId])
 
   useEffect(() => { chatEndRef.current?.scrollIntoView({ behavior: 'smooth' }) }, [messages])
 
@@ -313,6 +349,43 @@ export default function CourseWorkshopPage() {
   const reset = () => {
     setSessionId(null); setProfile(null); setMessages([]); setPendingHitl(null)
     setIsComplete(false); setStages([]); setError(null); setExpanded(null); setStageData({})
+    setHitlContentMap({})
+  }
+
+  // HITL 内容預覽：HITL 出現即直接渲染產出，客戶無需先點「編輯內容後確認」。
+  // 默認模式（非 editing）下在「待你確認」標題下、操作按鈕上方調用。
+  const renderHitlPreview = (hitlId: string) => {
+    const meta = HITL_META[hitlId]
+    // HITL-1：無 types，直接展示已解析的需求摘要，讓客戶一眼看到「需求是什麼」
+    if (!meta?.types?.length) {
+      if (hitlId === 'HITL-1') {
+        return (
+          <div className="mb-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
+            <div className="text-[12px] font-medium text-gray-500 mb-1.5 flex items-center gap-1.5">
+              <ClipboardCheck className="w-3.5 h-3.5 text-violet-500" /> 需求解析摘要（AI 已提取）
+            </div>
+            <pre className="whitespace-pre-wrap font-sans text-[12px] leading-relaxed text-gray-700 max-h-[260px] overflow-y-auto">
+              {profile ? JSON.stringify(profile, null, 2) : '（解析中…）'}
+            </pre>
+          </div>
+        )
+      }
+      return null
+    }
+    return (
+      <div className="space-y-3 mb-3">
+        {meta.types.map((t) => (
+          <div key={t} className="rounded-lg border border-gray-100 bg-gray-50 p-3">
+            <div className="text-[12px] font-semibold text-violet-600 mb-1.5 flex items-center gap-1.5">
+              <FileText className="w-3.5 h-3.5" /> {TYPE_LABELS[t] ?? t}
+            </div>
+            <div className="max-h-[280px] overflow-y-auto">
+              <ContentViewer type={t} data={hitlContentMap[t]} />
+            </div>
+          </div>
+        ))}
+      </div>
+    )
   }
 
   // ============================================================
@@ -331,7 +404,7 @@ export default function CourseWorkshopPage() {
               <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> DeepSeek 真實生成
               </span>
-              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v5-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
+              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v7-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -402,7 +475,7 @@ export default function CourseWorkshopPage() {
                 {pendingHitl && pendingHitl.hitl_id !== "HITL-1" && (
                     <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-2 text-[12px]">
                       <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                      <span>AI 已生成「{pendingHitl.label}」產出，請在右側確認、修改或跳過，確認後才會進入下一節點。</span>
+                      <span>AI 已生成「{HITL_META[pendingHitl.hitl_id]?.label ?? pendingHitl.label}」產出，請在右側確認、修改或跳過，確認後才會進入下一節點。</span>
                     </div>
                   )}
                   <div className="mt-3 flex gap-2">
@@ -428,8 +501,10 @@ export default function CourseWorkshopPage() {
                     <ClipboardCheck className="w-4 h-4 text-violet-500" />
                     <h2 className="text-sm font-bold text-gray-900">待你確認</h2>
                   </div>
-                  <p className="text-[13px] text-violet-700 font-medium mb-3">{pendingHitl.label}</p>
+                  <p className="text-[13px] text-violet-700 font-medium mb-3">{HITL_META[pendingHitl.hitl_id]?.label ?? pendingHitl.label}</p>
+
                   {editing ? (
+                    /* 编辑模式：JSON textarea */
                     <div className="space-y-2">
                       <textarea
                         value={editText} onChange={(e) => setEditText(e.target.value)} rows={10}
@@ -443,27 +518,34 @@ export default function CourseWorkshopPage() {
                       </div>
                     </div>
                   ) : (
-                    <div className="space-y-2">
-                      <button onClick={() => doHitl('confirm')} disabled={loading} className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 shadow-lg shadow-violet-500/25 hover:brightness-110 disabled:opacity-60 flex items-center justify-center gap-1.5">
-                        {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} 確認並繼續
-                      </button>
-                      <div className="grid grid-cols-2 gap-2">
-                        <button onClick={() => doHitl('regenerate')} disabled={loading} className="py-2 rounded-xl border border-gray-200 text-[12.5px] text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-1.5 disabled:opacity-60">
-                          <RotateCcw className="w-3.5 h-3.5" /> 重新生成
+                    /* 默认模式：内容预览 + 操作按钮 */
+                    <>
+                      {/* 内容预览区 */}
+                      {renderHitlPreview(pendingHitl.hitl_id)}
+
+                      {/* 主要操作按钮 */}
+                      <div className="mt-3 space-y-2">
+                        <button onClick={() => doHitl('confirm')} disabled={loading} className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 shadow-lg shadow-violet-500/25 hover:brightness-110 disabled:opacity-60 flex items-center justify-center gap-1.5">
+                          {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} 確認並繼續
                         </button>
-                        <button onClick={() => doHitl('skip')} disabled={loading} className="py-2 rounded-xl border border-gray-200 text-[12.5px] text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-1.5 disabled:opacity-60">
-                          <SkipForward className="w-3.5 h-3.5" /> 跳過
+                        <div className="grid grid-cols-2 gap-2">
+                          <button onClick={() => doHitl('regenerate')} disabled={loading} className="py-2 rounded-xl border border-gray-200 text-[12.5px] text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-1.5 disabled:opacity-60">
+                            <RotateCcw className="w-3.5 h-3.5" /> 重新生成
+                          </button>
+                          <button onClick={() => doHitl('skip')} disabled={loading} className="py-2 rounded-xl border border-gray-200 text-[12.5px] text-gray-600 hover:bg-gray-50 flex items-center justify-center gap-1.5 disabled:opacity-60">
+                            <SkipForward className="w-3.5 h-3.5" /> 跳過
+                          </button>
+                        </div>
+                        {HITL_META[pendingHitl.hitl_id]?.edit_field && (
+                          <button onClick={openEdit} disabled={loading} className="w-full py-2 rounded-xl border border-violet-200 text-[12.5px] text-violet-600 hover:bg-violet-50 flex items-center justify-center gap-1.5 disabled:opacity-60">
+                            <Pencil className="w-3.5 h-3.5" /> 編輯內容後確認（修改原始 JSON）
+                          </button>
+                        )}
+                        <button onClick={() => doHitl('skip_all')} disabled={loading} className="w-full py-2 rounded-xl text-[12px] text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-60">
+                          <SkipForward className="w-3.5 h-3.5" /> 一鍵跳過全部確認點
                         </button>
                       </div>
-                      {HITL_META[pendingHitl.hitl_id]?.edit_field && (
-                        <button onClick={openEdit} disabled={loading} className="w-full py-2 rounded-xl border border-gray-200 text-[12.5px] text-violet-600 hover:bg-violet-50 flex items-center justify-center gap-1.5 disabled:opacity-60">
-                          <Pencil className="w-3.5 h-3.5" /> 編輯內容後確認
-                        </button>
-                      )}
-                      <button onClick={() => doHitl('skip_all')} disabled={loading} className="w-full py-2 rounded-xl text-[12px] text-gray-400 hover:text-gray-600 hover:bg-gray-50 rounded-xl flex items-center justify-center gap-1.5 disabled:opacity-60">
-                        <SkipForward className="w-3.5 h-3.5" /> 一鍵跳過全部確認點
-                      </button>
-                    </div>
+                    </>
                   )}
                 </div>
               )}
