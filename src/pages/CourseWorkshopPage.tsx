@@ -214,7 +214,10 @@ export default function CourseWorkshopPage() {
   // 發送追問
   const sendMessage = async () => {
     const text = input.trim()
-    if (!text || !sessionId || loading) return
+    if (!sessionId || loading) return  // 移除 !text 检查：空输入时给出提示而非静默退出
+    if (!text) {
+      setError('⚠️ 請先輸入內容再發送'); setTimeout(() => setError(null), 2500); return
+    }
     setLoading(true); setError(null)
     pushMsg({ role: 'user', content: text })
     try {
@@ -409,9 +412,9 @@ export default function CourseWorkshopPage() {
                       placeholder={pendingHitl?.hitl_id === "HITL-1" ? "可繼續補充需求，AI 會即時更新確認摘要…" : "回覆 AI 的追問，推進需求解析…"}
                       className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2.5 text-[13px] outline-none focus:border-violet-400"
                     />
-                    <button onClick={sendMessage} disabled={loading || !input.trim()} className="px-4 py-2.5 rounded-xl bg-violet-600 text-white text-[13px] font-medium hover:bg-violet-700 disabled:opacity-60 flex items-center gap-1.5">
-                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} 發送
-                    </button>
+                  <button onClick={sendMessage} disabled={loading} className="px-4 py-2.5 rounded-xl bg-violet-600 text-white text-[13px] font-medium hover:bg-violet-700 disabled:opacity-60 flex items-center gap-1.5">
+                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} 發送
+                  </button>
                   </div>
                 </>
               </InputErrorBoundary>
