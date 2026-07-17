@@ -87,7 +87,7 @@ export default function CourseWorkshopPage() {
   const [input, setInput] = useState('')
   const [pendingHitl, setPendingHitl] = useState<HitlInfo>(null)
   const [isComplete, setIsComplete] = useState(false)
-  const [needFollowup, setNeedFollowup] = useState(false)
+  const [, setNeedFollowup] = useState(false)
   const [stages, setStages] = useState<{ name: string; label: string; status: string }[]>([])
   const [loading, setLoading] = useState(false)
   const [error, setError] = useState<string | null>(null)
@@ -199,9 +199,11 @@ export default function CourseWorkshopPage() {
       }
       if (j.agent_message) pushMsg({ role: 'assistant', content: j.agent_message })
       if (j.profile) setProfile(j.profile)
-      setPendingHitl(j.hitl ?? null)
-      setNeedFollowup(j.need_followup ?? false)
-      setInput('') // 仅成功发送后清空输入框
+      // 仅当响应明确带回 hitl 时才更新，避免内容生成阶段收到「消息已接收」这类
+      // 非需求阶段响应时误把待确认面板清空，导致输入框/确认面板竞态消失。
+      if (j.hitl !== undefined) setPendingHitl(j.hitl)
+      if (j.need_followup !== undefined) setNeedFollowup(j.need_followup)
+      setInput('') // 仅成功发送后清空输入框（发送失败已在上方 return，输入不丢）
   }
     finally { setLoading(false) }
   }
@@ -358,24 +360,27 @@ export default function CourseWorkshopPage() {
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              {(pendingHitl == null || needFollowup || (pendingHitl?.hitl_id === "HITL-1")) && !isComplete ? (
-                <div className="mt-3 flex gap-2">
-                  <input
-                    value={input} onChange={(e) => setInput(e.target.value)}
-                    onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
-                    placeholder="回覆 AI 的追問，推進需求解析…"
-                    className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2.5 text-[13px] outline-none focus:border-violet-400"
-                  />
-                  <button onClick={sendMessage} disabled={loading || !input.trim()} className="px-4 py-2.5 rounded-xl bg-violet-600 text-white text-[13px] font-medium hover:bg-violet-700 disabled:opacity-60 flex items-center gap-1.5">
-                    {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} 發送
-                  </button>
-                </div>
-              ) : pendingHitl ? (
-                <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-2 text-[12px]">
-                  <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
-                  <span>AI 已生成「{pendingHitl.label}」產出，請在右側確認、修改或跳過，確認後才會進入下一節點。</span>
-                </div>
-              ) : null}
+              {!isComplete && (
+                <>
+                  {pendingHitl && pendingHitl.hitl_id !== "HITL-1" && (
+                    <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-2 text-[12px]">
+                      <AlertCircle className="w-3.5 h-3.5 mt-0.5 shrink-0" />
+                      <span>AI 已生成「{pendingHitl.label}」產出，請在右側確認、修改或跳過，確認後才會進入下一節點。</span>
+                    </div>
+                  )}
+                  <div className="mt-3 flex gap-2">
+                    <input
+                      value={input} onChange={(e) => setInput(e.target.value)}
+                      onKeyDown={(e) => e.key === 'Enter' && sendMessage()}
+                      placeholder={pendingHitl?.hitl_id === "HITL-1" ? "可繼續補充需求，AI 會即時更新確認摘要…" : "回覆 AI 的追問，推進需求解析…"}
+                      className="flex-1 rounded-xl border border-gray-200 px-3.5 py-2.5 text-[13px] outline-none focus:border-violet-400"
+                    />
+                    <button onClick={sendMessage} disabled={loading || !input.trim()} className="px-4 py-2.5 rounded-xl bg-violet-600 text-white text-[13px] font-medium hover:bg-violet-700 disabled:opacity-60 flex items-center gap-1.5">
+                      {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <Send className="w-4 h-4" />} 發送
+                    </button>
+                  </div>
+                </>
+              )}
             </div>
 
             {/* 右：HITL / 完成 */}
