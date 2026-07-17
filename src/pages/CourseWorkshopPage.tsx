@@ -359,14 +359,42 @@ export default function CourseWorkshopPage() {
     // HITL-1：無 types，直接展示已解析的需求摘要，讓客戶一眼看到「需求是什麼」
     if (!meta?.types?.length) {
       if (hitlId === 'HITL-1') {
+        // 需求解析字段 → 人類可讀標籤（避免裸 JSON）
+        const PROFILE_FIELDS: { key: string; label: string; icon?: string }[] = [
+          { key: 'identity', label: '👤 身份' },
+          { key: 'expertise', label: '💡 專長領域' },
+          { key: 'experience', label: '📚 經驗背景' },
+          { key: 'target_audience', label: '🎯 目標學員' },
+          { key: 'course_topic', label: '📖 課程主題' },
+          { key: 'delivery_format', label: '📦 交付形式' },
+          { key: 'style_preference', label: '🎨 風格偏好' },
+        ]
+        const knownKeys = new Set(PROFILE_FIELDS.map(f => f.key).concat(['completeness', 'need_followup']))
+        const rows = PROFILE_FIELDS
+          .map(f => ({ ...f, val: profile?.[f.key] }))
+          .filter(r => r.val != null && r.val !== '' && r.val !== 'null')
+        const extras = Object.entries(profile ?? {}).filter(([k, v]) => !knownKeys.has(k) && v != null && v !== '' && v !== 'null')
         return (
           <div className="mb-3 rounded-lg border border-gray-100 bg-gray-50 p-3">
-            <div className="text-[12px] font-medium text-gray-500 mb-1.5 flex items-center gap-1.5">
+            <div className="text-[12px] font-medium text-gray-500 mb-2 flex items-center gap-1.5">
               <ClipboardCheck className="w-3.5 h-3.5 text-violet-500" /> 需求解析摘要（AI 已提取）
             </div>
-            <pre className="whitespace-pre-wrap font-sans text-[12px] leading-relaxed text-gray-700 max-h-[260px] overflow-y-auto">
-              {profile ? JSON.stringify(profile, null, 2) : '（解析中…）'}
-            </pre>
+            {profile ? (
+              <div className="space-y-1.5 max-h-[260px] overflow-y-auto">
+                {rows.map(r => (
+                  <div key={r.key} className="flex gap-2 text-[12.5px] leading-relaxed">
+                    <span className="shrink-0 text-gray-400 w-[68px]">{r.label}</span>
+                    <span className="text-gray-800 font-medium flex-1">{String(r.val)}</span>
+                  </div>
+                ))}
+                {extras.map(([k, v]: [string, any]) => (
+                  <div key={k} className="flex gap-2 text-[12.5px] leading-relaxed">
+                    <span className="shrink-0 text-gray-400 w-[68px]">{k}</span>
+                    <span className="text-gray-800 font-medium flex-1">{typeof v === 'string' ? v : JSON.stringify(v)}</span>
+                  </div>
+                ))}
+              </div>
+            ) : <p className="text-[12px] text-gray-400">（解析中…）</p>}
           </div>
         )
       }
@@ -404,7 +432,7 @@ export default function CourseWorkshopPage() {
               <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> DeepSeek 真實生成
               </span>
-              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v8-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
+              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v9-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
