@@ -8,7 +8,7 @@ import {
 } from 'lucide-react'
 
 // ============================================================
-// ErrorBoundary：防止单个子组件崩溃导致整棵樹（含輸入框）不渲染
+// ErrorBoundary：防止單個子組件崩潰導致整棵樹（含輸入框）不渲染
 // ============================================================
 class InputErrorBoundary extends Component<{ children: ReactNode }, { hasError: boolean }> {
   constructor(props: { children: ReactNode }) {
@@ -102,7 +102,7 @@ const TYPE_LABELS: Record<string, string> = {
 type ChatMsg = { role: 'user' | 'assistant' | 'system'; content: string }
 type HitlInfo = { hitl_id: string; label: string; status: string } | null
 
-// 自动拉取的 HITL 内容预览（key=hitl_id, value=fetched data）
+// 自動拉取的 HITL 內容預覽（key=hitl_id, value=fetched data）
 type HitlContentMap = Record<string, any>
 
 export default function CourseWorkshopPage() {
@@ -146,8 +146,8 @@ export default function CourseWorkshopPage() {
         const d = await r.json()
         if (!active) return
         setStages(d.stages ?? [])
-        // v15: 同步 pendingHitl，防止状态回退（后端 v14 自动推进多个节点时，
-        // 轮询可能拿到中间状态的旧 HITL，导致右侧面板显示已过的确认点）
+        // v15: 同步 pendingHitl，防止狀態回退（後端 v14 自動推進多個節點時，
+        // 輪詢可能拿到中間狀態的舊 HITL，導致右側面板顯示已過的確認點）
         const nextHitl = d.current_hitl ?? null
         const hitlOrder = (id: string | undefined) => {
           if (!id) return -1
@@ -155,13 +155,13 @@ export default function CourseWorkshopPage() {
           return m[id] ?? 0
         }
         setPendingHitl((prev) => {
-          // v15: 不允许回退到更早的 HITL（防止轮询旧数据覆盖新状态）
+          // v15: 不允許回退到更早的 HITL（防止輪詢舊數據覆蓋新狀態）
           if (prev != null && nextHitl != null && hitlOrder(nextHitl.hitl_id) < hitlOrder(prev.hitl_id)) {
             return prev
           }
-          // 注意：原先「prev==null 且 nextHitl 非 HITL-1 就 return prev(null)」的守卫会在
-          // 刷新页面后把正确的 HITL 按钮（如 HITL-7 审核报告确认）整个藏掉。
-          // 询问阶段（HITL-1=asking）后端本就回传 current_hitl=null，无需前端再拦。
+          // 注意：原先「prev==null 且 nextHitl 非 HITL-1 就 return prev(null)」的守衛會在
+          // 刷新頁面後把正確的 HITL 按鈕（如 HITL-7 審覈報告確認）整個藏掉。
+          // 詢問階段（HITL-1=asking）後端本就回傳 current_hitl=null，無需前端再攔。
           return nextHitl
         })
         setIsComplete(!!d.is_complete)
@@ -172,7 +172,7 @@ export default function CourseWorkshopPage() {
     return () => { active = false; window.clearInterval(id) }
   }, [sessionId, isComplete])
 
-  // 自動拉取 HITL 内容：當 pendingHitl 出現或變化時，自動抓取對應內容並預覽
+  // 自動拉取 HITL 內容：當 pendingHitl 出現或變化時，自動抓取對應內容並預覽
   // 用戶不再需要點「編輯內容後確認」才能看到產出——直接展示。
   useEffect(() => {
     if (!pendingHitl || !sessionId) return
@@ -248,7 +248,7 @@ export default function CourseWorkshopPage() {
   // 發送追問
   const sendMessage = async () => {
     const text = input.trim()
-    if (!sessionId || loading) return  // 移除 !text 检查：空输入时给出提示而非静默退出
+    if (!sessionId || loading) return  // 移除 !text 檢查：空輸入時給出提示而非靜默退出
     if (!text) {
       setError('⚠️ 請先輸入內容再發送'); setTimeout(() => setError(null), 2500); return
     }
@@ -261,17 +261,17 @@ export default function CourseWorkshopPage() {
       })
       const j = await r.json().catch(() => ({}))
       if (!r.ok) {
-        // 发送失败：保留用户输入原文，便于用户修正后重试（避免 400/网络错误吞掉内容）
+        // 發送失敗：保留用戶輸入原文，便於用戶修正後重試（避免 400/網絡錯誤吞掉內容）
         showError(`發送失敗 (${r.status})${j?.detail ? '：' + JSON.stringify(j.detail) : ''}`)
         return
       }
       if (j.agent_message) pushMsg({ role: 'assistant', content: j.agent_message })
       if (j.profile) setProfile(j.profile)
-      // 仅当响应明确带回 hitl 时才更新，避免内容生成阶段收到「消息已接收」这类
-      // 非需求阶段响应时误把待确认面板清空，导致输入框/确认面板竞态消失。
+      // 僅當響應明確帶回 hitl 時才更新，避免內容生成階段收到「消息已接收」這類
+      // 非需求階段響應時誤把待確認面板清空，導致輸入框/確認面板競態消失。
       if (j.hitl !== undefined) setPendingHitl(j.hitl)
       if (j.need_followup !== undefined) setNeedFollowup(j.need_followup)
-      setInput('') // 仅成功发送后清空输入框（发送失败已在上方 return，输入不丢）
+      setInput('') // 僅成功發送後清空輸入框（發送失敗已在上方 return，輸入不丟）
   }
     finally { setLoading(false) }
   }
@@ -350,7 +350,7 @@ export default function CourseWorkshopPage() {
     setHitlContentMap({})
   }
 
-  // HITL 内容預覽：HITL 出現即直接渲染產出，客戶無需先點「編輯內容後確認」。
+  // HITL 內容預覽：HITL 出現即直接渲染產出，客戶無需先點「編輯內容後確認」。
   // 默認模式（非 editing）下在「待你確認」標題下、操作按鈕上方調用。
   const renderHitlPreview = (hitlId: string) => {
     const meta = HITL_META[hitlId]
@@ -430,7 +430,7 @@ export default function CourseWorkshopPage() {
               <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> DeepSeek 真實生成
               </span>
-              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v17-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
+              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端構建版本">v17-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
@@ -495,8 +495,8 @@ export default function CourseWorkshopPage() {
                 ))}
                 <div ref={chatEndRef} />
               </div>
-              {/* 输入框常驻：无条件渲染，确保任何状态下用户都能输入。
-                  即使 isComplete=true 或任意 HITL 状态，输入框始终可见可用。 */}
+              {/* 輸入框常駐：無條件渲染，確保任何狀態下用戶都能輸入。
+                  即使 isComplete=true 或任意 HITL 狀態，輸入框始終可見可用。 */}
               <>
                 {pendingHitl && pendingHitl.hitl_id !== "HITL-1" && (
                     <div className="mt-3 flex items-start gap-2 bg-amber-50 border border-amber-200 text-amber-700 rounded-lg px-3 py-2 text-[12px]">
@@ -530,7 +530,7 @@ export default function CourseWorkshopPage() {
                   <p className="text-[13px] text-violet-700 font-medium mb-3">{HITL_META[pendingHitl.hitl_id]?.label ?? pendingHitl.label}</p>
 
                   {editing ? (
-                    /* 编辑模式：JSON textarea */
+                    /* 編輯模式：JSON textarea */
                     <div className="space-y-2">
                       <textarea
                         value={editText} onChange={(e) => setEditText(e.target.value)} rows={10}
@@ -544,12 +544,12 @@ export default function CourseWorkshopPage() {
                       </div>
                     </div>
                   ) : (
-                    /* 默认模式：内容预览 + 操作按钮 */
+                    /* 默認模式：內容預覽 + 操作按鈕 */
                     <>
-                      {/* 内容预览区 */}
+                      {/* 內容預覽區 */}
                       {renderHitlPreview(pendingHitl.hitl_id)}
 
-                      {/* 主要操作按钮 */}
+                      {/* 主要操作按鈕 */}
                       <div className="mt-3 space-y-2">
                         <button onClick={() => doHitl('confirm')} disabled={loading} className="w-full py-2.5 rounded-xl text-[13px] font-semibold text-white bg-gradient-to-r from-violet-600 to-purple-600 shadow-lg shadow-violet-500/25 hover:brightness-110 disabled:opacity-60 flex items-center justify-center gap-1.5">
                           {loading ? <Loader2 className="w-4 h-4 animate-spin" /> : <CheckCircle2 className="w-4 h-4" />} 確認並繼續
@@ -753,7 +753,7 @@ function ContentViewer({ type, data }: { type: string; data: any }) {
         label: '📊 內容矩陣',
         value: (
           <div className="space-y-1 text-[12px] text-gray-700">
-            {cm.platforms && <div><span className="text-gray-400">平台：</span>{String(cm.platforms)}</div>}
+            {cm.platforms && <div><span className="text-gray-400">平臺：</span>{String(cm.platforms)}</div>}
             {cm.content_types && <div><span className="text-gray-400">內容形式：</span>{String(cm.content_types)}</div>}
             {cm.frequency && <div><span className="text-gray-400">更新頻率：</span>{String(cm.frequency)}</div>}
           </div>

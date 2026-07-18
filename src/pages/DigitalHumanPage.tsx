@@ -51,7 +51,7 @@ const VISUAL_STYLES = [
   { key: 'warm',    label: '溫暖柔和' },
 ]
 const VISUAL_PROMPTS: Record<string, string> = {
-  natural: '自然真實，清晰正面，自然的表情與唇形同步',
+  natural: '自然真實，清晰正面，自然的表情與脣形同步',
   cinema: '電影質感，光影細膩，電影級畫面',
   fresh: '清新明亮，乾淨通透的畫面',
   tech: '科技感，冷色調，未來感風格',
