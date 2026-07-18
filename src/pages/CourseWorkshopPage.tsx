@@ -166,14 +166,13 @@ export default function CourseWorkshopPage() {
           return m[id] ?? 0
         }
         setPendingHitl((prev) => {
-          // v5 保留：asking 阶段不显示后续 HITL（保持输入框可见）
-          if (prev == null && nextHitl != null && nextHitl.hitl_id !== "HITL-1") {
-            return prev
-          }
           // v15: 不允许回退到更早的 HITL（防止轮询旧数据覆盖新状态）
           if (prev != null && nextHitl != null && hitlOrder(nextHitl.hitl_id) < hitlOrder(prev.hitl_id)) {
             return prev
           }
+          // 注意：原先「prev==null 且 nextHitl 非 HITL-1 就 return prev(null)」的守卫会在
+          // 刷新页面后把正确的 HITL 按钮（如 HITL-7 审核报告确认）整个藏掉。
+          // 询问阶段（HITL-1=asking）后端本就回传 current_hitl=null，无需前端再拦。
           return nextHitl
         })
         setIsComplete(!!d.is_complete)
@@ -442,7 +441,7 @@ export default function CourseWorkshopPage() {
               <span className="text-[11px] font-normal text-emerald-600 bg-emerald-50 px-2 py-0.5 rounded-full flex items-center gap-1">
                 <Cpu className="w-3 h-3" /> DeepSeek 真實生成
               </span>
-              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v15-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
+              <span className="text-[9px] font-mono text-gray-400 bg-gray-100 px-1.5 py-0.5 rounded" title="前端构建版本">v17-{new Date().toISOString().slice(0,10).replace(/-/g,'')}</span>
             </h1>
           </div>
           <div className="flex items-center gap-2">
