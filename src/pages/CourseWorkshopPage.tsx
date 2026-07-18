@@ -58,8 +58,6 @@ const HITL_META: Record<string, { label: string; node: string; content_type: str
   'HITL-2': { label: 'IP 定位確認', node: 'ip_positioning', content_type: 'ip_report', types: ['ip_report'], edit_field: 'ip_positioning' },
   'HITL-3': { label: '課程大綱確認', node: 'course_architecture', content_type: 'outline', types: ['outline'], edit_field: 'course_outline' },
   'HITL-4': { label: '內容預覽確認', node: 'content_production_serial', content_type: 'scripts', types: ['scripts', 'slides', 'cases'], edit_field: null },
-  'HITL-5': { label: '語音合成確認', node: 'voice_tts', content_type: 'audio', types: ['audio'], edit_field: null },
-  'HITL-6': { label: '數字人視頻確認', node: 'digital_human', content_type: 'video', types: ['video'], edit_field: null },
   'HITL-7': { label: '審核報告確認', node: 'quality_review', content_type: 'review', types: ['review'], edit_field: null },
 }
 
@@ -86,14 +84,6 @@ const STAGE_INFO: Record<string, { label: string; does: string; produces: string
     label: '內容生產（營銷/定價）', does: '生成營銷文案與定價方案',
     produces: '營銷文案 / 定價方案', types: ['marketing', 'pricing'],
   },
-  voice_tts: {
-    label: '語音合成', does: '把講稿合成為課時音頻',
-    produces: '課時音頻', types: ['audio'],
-  },
-  digital_human: {
-    label: '數字人視頻', does: '用數字人生成講解視頻',
-    produces: '數字人視頻', types: ['video'],
-  },
   quality_review: {
     label: '質量審核', does: '評估課程質量並給出修正建議',
     produces: '審核報告（評分 / 維度）', types: ['review'],
@@ -107,7 +97,6 @@ const STAGE_INFO: Record<string, { label: string; does: string; produces: string
 const TYPE_LABELS: Record<string, string> = {
   outline: '課程大綱', ip_report: 'IP 定位報告', scripts: '講稿', slides: '課件',
   cases: '實戰案例', marketing: '營銷文案', pricing: '定價方案', review: '審核報告',
-  audio: '音頻', video: '視頻',
 }
 
 type ChatMsg = { role: 'user' | 'assistant' | 'system'; content: string }
@@ -162,7 +151,7 @@ export default function CourseWorkshopPage() {
         const nextHitl = d.current_hitl ?? null
         const hitlOrder = (id: string | undefined) => {
           if (!id) return -1
-          const m: Record<string, number> = {'HITL-1':1,'HITL-2':2,'HITL-3':3,'HITL-4':4,'HITL-5':5,'HITL-6':6,'HITL-7':7}
+          const m: Record<string, number> = {'HITL-1':1,'HITL-2':2,'HITL-3':3,'HITL-4':4,'HITL-7':7}
           return m[id] ?? 0
         }
         setPendingHitl((prev) => {
