@@ -1,7 +1,7 @@
 import { useState, useRef, useCallback } from 'react'
 import {
   Send, Upload, FileText, Wand2, Settings, Smartphone, Play, Image,
-  Check, X, Trash2, Clock, AlertTriangle, CheckSquare,
+  Check, X, Trash2, Clock, AlertTriangle,
 } from 'lucide-react'
 
 // ---------- types ----------
@@ -85,7 +85,7 @@ export default function PublishPage() {
   // --- public config ---
   const [videoData, setVideoData] = useState<VideoData | null>(null)
   const [coverLandscape, setCoverLandscape] = useState<CoverData | null>(null)
-  const [coverPortrait, setCoverPortrait] = useState<CoverData | null>(null)
+  const [coverPortrait] = useState<CoverData | null>(null)
 
   // --- platform configs ---
   const [platformConfigs, setPlatformConfigs] = useState<Record<string, PlatformConfig>>({})
@@ -246,7 +246,7 @@ export default function PublishPage() {
     )
 
     for (let i = 0; i < allTasks.length; i++) {
-      const { account, group } = allTasks[i]
+      const { account } = allTasks[i]
       setCurrentPublishingAccount(account.name)
       setPublishProgress(Math.floor((i / allTasks.length) * 100))
 

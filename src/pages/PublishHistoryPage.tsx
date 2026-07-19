@@ -1,14 +1,14 @@
 import { useState, useCallback } from 'react'
 import {
   Upload, CircleCheck, Calendar, RefreshCw, Delete, Check, X,
-  Image, Clock, ChevronDown, CheckSquare,
+  Image, Clock, CheckSquare,
 } from 'lucide-react'
 
 // ---------- types ----------
 interface PublishItem {
   platform: string
   account_name: string
-  status: 'success' | 'fail' | 'running' | 'pending' | 'cancelled'
+  status: 'success' | 'fail' | 'failed' | 'running' | 'pending' | 'cancelled'
 }
 
 interface PublishBatch {

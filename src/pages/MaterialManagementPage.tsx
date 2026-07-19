@@ -121,7 +121,7 @@ export default function MaterialManagementPage() {
   const [materials] = useState<Material[]>(MOCK_MATERIALS)
   const [searchKeyword, setSearchKeyword] = useState('')
   const [typeFilter, setTypeFilter] = useState<'all' | 'image' | 'video'>('all')
-  const [loading, setLoading] = useState(false)
+  const [loading] = useState(false)
   const [isRefreshing, setIsRefreshing] = useState(false)
   const [previewMaterial, setPreviewMaterial] = useState<Material | null>(null)
   const fileInputRef = useRef<HTMLInputElement>(null)

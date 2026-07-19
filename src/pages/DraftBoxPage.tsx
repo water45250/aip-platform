@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react'
 import {
-  Edit, Trash2, Check, X, Play, Image, Clock, Square,
+  Edit, Trash2, Check, X, Image, Clock,
   CheckSquare, Send,
 } from 'lucide-react'
 

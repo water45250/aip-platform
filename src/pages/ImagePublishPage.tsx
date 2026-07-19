@@ -44,11 +44,11 @@ const MOCK_ACCOUNTS: PlatformAccount[] = [
 // ---------- component ----------
 export default function ImagePublishPage() {
   const [images, setImages] = useState<ImageItem[]>([])
-  const [coverImage, setCoverImage] = useState<ImageItem | null>(null)
+  const [coverImage] = useState<ImageItem | null>(null)
   const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null)
   const [publishAccountIds, setPublishAccountIds] = useState<Set<number>>(new Set())
   const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
-  const [publishing, setPublishing] = useState(false)
+  const [publishing] = useState(false)
   const [previewIndex, setPreviewIndex] = useState(0)
   const [configs, setConfigs] = useState<Record<string, PlatformConfig>>({})
 
@@ -249,7 +249,7 @@ export default function ImagePublishPage() {
                   圖片列表 ({images.length}/35)
                 </label>
                 <div className="grid grid-cols-5 gap-3">
-                  {images.map((img, idx) => (
+                  {images.map((img) => (
                     <div key={img.id} className="relative aspect-square rounded-lg overflow-hidden bg-white border border-gray-100 group">
                       <img src={img.url} alt={img.name} className="w-full h-full object-cover" />
                       <button

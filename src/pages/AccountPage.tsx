@@ -5,8 +5,8 @@ import {
   ChevronLeft, Camera, User, Lock, Shield, Eye, EyeOff,
   Monitor, Clock, Crown, ArrowRight, Plus, Link2, X,
   TrendingUp, FileVideo, Play, Phone, AlertTriangle, Check,
-  Users as UsersIcon, Laptop, Smartphone, MapPin, Globe,
-  Settings, Bell, Loader2, KeyRound, Fingerprint, Smartphone as PhoneIcon,
+  Users as UsersIcon, Laptop, MapPin, Globe,
+  Settings, Bell, Loader2, KeyRound, Fingerprint, RefreshCw, Smartphone as PhoneIcon,
 } from 'lucide-react'
 import { securityApi, formatRelativeTime, formatDateTime } from '../lib/api'
 import type { Device, LoginRecord, TwoFactorStatus } from '../lib/api'
