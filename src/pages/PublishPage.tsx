@@ -1,585 +1,779 @@
-import { useState } from 'react'
-import { Link } from 'react-router-dom'
+import { useState, useRef, useCallback } from 'react'
 import {
-  Send, ChevronLeft, ChevronRight, Search, CheckCircle2,
-  Clock, FileVideo, Plus, AlertCircle, Info, Upload, Eye,
+  Send, Upload, FileText, Wand2, Settings, Smartphone, Play, Image,
+  Check, X, Trash2, Clock, AlertTriangle, CheckSquare,
 } from 'lucide-react'
 
-// ============ 平臺數據 ============
-interface Platform {
-  id: string
+// ---------- types ----------
+interface Account {
+  id: number
   name: string
-  icon: string // emoji for now
-  color: string
-  authorized: boolean
+  platform: string
+  avatar?: string
 }
 
-const PLATFORMS: Platform[] = [
-  { id: 'douyin',    name: '抖音',    icon: '🎵', color: '#000000', authorized: true },
-  { id: 'wechat_mp', name: '微信公衆號', icon: '💬', color: '#07C160', authorized: true },
-  { id: 'shipinhao', name: '視頻號',   icon: '✖️', color: '#FA9D3B', authorized: true },
-  { id: 'weibo',     name: '微博',     icon: '🔴', color: '#E6162D', authorized: true },
-  { id: 'xiaohongshu', name: '小紅書', icon: '📕', color: '#FE2C55', authorized: true },
-  { id: 'zhihu',     name: '知乎',     icon: '💙', color: '#0084FF', authorized: false },
-  { id: 'bilibili',  name: 'B站',      icon: '📺', color: '#FB7299', authorized: true },
-  { id: 'toutiao',   name: '頭條號',   icon: '📰', color: '#F85959', authorized: true },
-  { id: 'kuaishou',  name: '快手',     icon: '⚡', color: '#FF4906', authorized: false },
-  { id: 'baijiahao', name: '百家號',   icon: '📝', color: '#333333', authorized: false },
-]
+interface VideoData {
+  id?: number | string
+  name: string
+  url: string
+  stored_path?: string
+  size?: number
+  duration?: number
+  orientation?: 'horizontal' | 'portrait'
+}
 
-// ============ 作品數據 ============
-interface Work {
-  id: string
+interface CoverData {
+  id?: number | string
+  name: string
+  url: string
+  stored_path?: string
+}
+
+interface PlatformConfig {
   title: string
-  subtitle: string
-  type: string
-  duration: string
-  updatedAt: string
-  thumb: string // placeholder gradient
+  description: string
+  tags: string[]
+  aiContent?: string
+  isOriginal?: boolean
+  scheduleTime?: string
 }
 
-const WORKS: Work[] = [
-  { id: 'w1', title: '旅行的意義', subtitle: '| 川西之旅', type: 'vlog', duration: '02:45', updatedAt: '2024-05-21', thumb: 'from-blue-400 to-cyan-300' },
-  { id: 'w2', title: '咖啡時光', subtitle: '| 探店短視頻', type: '生活記錄', duration: '00:55', updatedAt: '2024-05-20', thumb: 'from-amber-600 to-orange-400' },
-  { id: 'w3', title: '煥活肌膚之美', subtitle: '| 護膚品推廣', type: '產品推廣', duration: '01:15', updatedAt: '2024-05-19', thumb: 'from-pink-400 to-rose-300' },
-  { id: 'w4', title: 'AI發展趨勢解析', subtitle: '', type: '知識分享', duration: '03:16', updatedAt: '2024-05-18', thumb: 'from-indigo-600 to-violet-500' },
-  { id: 'w5', title: '家常美味', subtitle: '| 番茄雞蛋麪', type: '美食教程', duration: '01:08', updatedAt: '2024-05-17', thumb: 'from-yellow-400 to-orange-400' },
+// ---------- constants ----------
+const PLATFORMS = [
+  { key: 'douyin', name: '抖音', color: '#000000', bgColor: 'rgba(0,0,0,0.06)' },
+  { key: 'xiaohongshu', name: '小紅書', color: '#ff2442', bgColor: 'rgba(255,36,66,0.1)' },
+  { key: 'kuaishou', name: '快手', color: '#ff4906', bgColor: 'rgba(255,73,6,0.1)' },
+  { key: 'bilibili', name: 'B站', color: '#fb7299', bgColor: 'rgba(251,114,153,0.1)' },
+  { key: 'weibo', name: '微博', color: '#e6162d', bgColor: 'rgba(230,22,45,0.1)' },
+  { key: 'channels', name: '視頻號', color: '#fa9d3b', bgColor: 'rgba(250,157,59,0.1)' },
+  { key: 'toutiao', name: '頭條號', color: '#f85959', bgColor: 'rgba(248,89,89,0.1)' },
+  { key: 'youtube', name: 'YouTube', color: '#ff0000', bgColor: 'rgba(255,0,0,0.08)' },
 ]
 
-const STEPS = ['選擇內容', '選擇平臺', '內容設置', '發布設置', '確認發布']
+const MOCK_ACCOUNTS: Account[] = [
+  { id: 1, name: '抖音官方號', platform: '抖音' },
+  { id: 2, name: '小紅書主號', platform: '小紅書' },
+  { id: 3, name: '快手達人號', platform: '快手' },
+  { id: 4, name: 'B站個人號', platform: 'B站' },
+  { id: 5, name: '微博個人號', platform: '微博' },
+  { id: 6, name: '視頻號官方', platform: '視頻號' },
+]
 
+// ---------- helpers ----------
+function formatDuration(seconds: number): string {
+  if (!seconds) return '0:00'
+  const m = Math.floor(seconds / 60)
+  const s = Math.floor(seconds % 60)
+  return `${m}:${s.toString().padStart(2, '0')}`
+}
+
+function formatSize(bytes: number): string {
+  if (!bytes) return '0 B'
+  if (bytes < 1024 * 1024) return (bytes / 1024).toFixed(1) + ' KB'
+  if (bytes < 1024 * 1024 * 1024) return (bytes / (1024 * 1024)).toFixed(1) + ' MB'
+  return (bytes / (1024 * 1024 * 1024)).toFixed(2) + ' GB'
+}
+
+// ---------- component ----------
 export default function PublishPage() {
-  const [step, setStep] = useState(1)
+  // --- sidebar state ---
+  const [expandedGroups, setExpandedGroups] = useState<Set<string>>(new Set())
+  const [selectedPlatform, setSelectedPlatform] = useState<string | null>(null)
+  const [selectedAccountId, setSelectedAccountId] = useState<number | null>(null)
+  const [publishAccountIds, setPublishAccountIds] = useState<Set<number>>(new Set())
 
-  // Step 1 state
-  const [selectedWorks, setSelectedWorks] = useState<string[]>(['w1'])
-  const [workSearch, setWorkSearch] = useState('')
-  const [workTypeFilter, setWorkTypeFilter] = useState('全部類型')
+  // --- public config ---
+  const [videoData, setVideoData] = useState<VideoData | null>(null)
+  const [coverLandscape, setCoverLandscape] = useState<CoverData | null>(null)
+  const [coverPortrait, setCoverPortrait] = useState<CoverData | null>(null)
 
-  // Step 2 state
-  const [selectedPlatforms, setSelectedPlatforms] = useState<string[]>(
-    PLATFORMS.filter(p => p.authorized).map(p => p.id)
-  )
+  // --- platform configs ---
+  const [platformConfigs, setPlatformConfigs] = useState<Record<string, PlatformConfig>>({})
 
-  // Step 3 state
-  const [publishTitle, setPublishTitle] = useState('旅行的意義 | 川西之旅')
-  const [publishDesc, setPublishDesc] = useState('')
-  const [publishTags, setPublishTags] = useState(['旅行', 'vlog', '川西'])
-  const [tagInput, setTagInput] = useState('')
+  // --- account overrides ---
+  const [accountOverrides, setAccountOverrides] = useState<Record<number, Partial<PlatformConfig>>>({})
 
-  // Step 4 state
-  const [scheduleMode, setScheduleMode] = useState<'now' | 'schedule'>('now')
-  const [scheduleTime, setScheduleTime] = useState('')
-
-  // Step 5 state
-  const [isPublishing, setIsPublishing] = useState(false)
+  // --- dialog / ui state ---
+  const [publishing, setPublishing] = useState(false)
   const [publishProgress, setPublishProgress] = useState(0)
+  const [showBatchPublish, setShowBatchPublish] = useState(false)
+  const [publishResults, setPublishResults] = useState<{ label: string; status: 'success' | 'error'; message: string }[]>([])
+  const [currentPublishingAccount, setCurrentPublishingAccount] = useState('')
 
-  const selectedWorkCount = selectedWorks.length
-  const authorizedCount = PLATFORMS.filter(p => p.authorized).length
-  const totalCount = PLATFORMS.length
+  // --- refs ---
+  const videoInputRef = useRef<HTMLInputElement>(null)
+  const coverInputRef = useRef<HTMLInputElement>(null)
 
-  function toggleWork(id: string) {
-    setSelectedWorks(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
+  // --- computed ---
+  const accountGroups = PLATFORMS.map((p) => ({
+    ...p,
+    accounts: MOCK_ACCOUNTS.filter((a) => a.platform === p.name),
+  }))
+
+  const currentPlatform = PLATFORMS.find((p) => p.key === selectedPlatform)
+  const currentAccount = MOCK_ACCOUNTS.find((a) => a.id === selectedAccountId)
+
+  // Get merged config for current selection
+  const currentConfig: PlatformConfig = (() => {
+    const base = selectedPlatform ? platformConfigs[selectedPlatform] : null
+    const override = selectedAccountId ? accountOverrides[selectedAccountId] : null
+    const defaults: PlatformConfig = { title: '', description: '', tags: [] }
+    if (!base && !override) return defaults
+    return {
+      title: override?.title ?? base?.title ?? '',
+      description: override?.description ?? base?.description ?? '',
+      tags: override?.tags ?? base?.tags ?? [],
+      aiContent: override?.aiContent ?? base?.aiContent ?? '',
+      isOriginal: override?.isOriginal ?? base?.isOriginal ?? false,
+      scheduleTime: override?.scheduleTime ?? base?.scheduleTime ?? '',
+    }
+  })()
+
+  // --- sidebar handlers ---
+  const toggleGroup = (key: string) => {
+    setExpandedGroups((prev) => {
+      const next = new Set(prev)
+      if (next.has(key)) next.delete(key)
+      else next.add(key)
+      return next
+    })
+    setSelectedPlatform(key)
+    setSelectedAccountId(null)
   }
 
-  function togglePlatform(id: string) {
-    setSelectedPlatforms(prev =>
-      prev.includes(id) ? prev.filter(x => x !== id) : [...prev, id]
-    )
+  const selectAccount = (account: Account, groupKey: string) => {
+    setSelectedAccountId(account.id)
+    setSelectedPlatform(groupKey)
+    setExpandedGroups((prev) => new Set(prev).add(groupKey))
   }
 
-  function toggleAllPlatforms() {
-    if (selectedPlatforms.length === authorizedCount) {
-      setSelectedPlatforms([])
-    } else {
-      setSelectedPlatforms(PLATFORMS.filter(p => p.authorized).map(p => p.id))
+  const toggleAccountSelection = (id: number) => {
+    setPublishAccountIds((prev) => {
+      const next = new Set(prev)
+      if (next.has(id)) next.delete(id)
+      else next.add(id)
+      return next
+    })
+  }
+
+  // --- video handlers ---
+  const triggerUploadVideo = () => videoInputRef.current?.click()
+
+  const handleVideoChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const url = URL.createObjectURL(file)
+    // Create a temporary video element to get duration
+    const tempVid = document.createElement('video')
+    tempVid.preload = 'metadata'
+    tempVid.onloadedmetadata = () => {
+      setVideoData({
+        id: Date.now(),
+        name: file.name,
+        url,
+        size: file.size,
+        duration: tempVid.duration,
+      })
+      URL.revokeObjectURL(tempVid.src)
+    }
+    tempVid.src = url
+    e.target.value = ''
+  }
+
+  const clearVideo = () => setVideoData(null)
+
+  const triggerUploadCover = () => coverInputRef.current?.click()
+
+  const handleCoverChange = (e: React.ChangeEvent<HTMLInputElement>) => {
+    const file = e.target.files?.[0]
+    if (!file) return
+    const url = URL.createObjectURL(file)
+    setCoverLandscape({ id: Date.now(), name: file.name, url })
+    e.target.value = ''
+  }
+
+  // --- config handlers ---
+  const updateCurrentConfig = (field: keyof PlatformConfig, value: string | string[] | boolean) => {
+    if (selectedAccountId) {
+      setAccountOverrides((prev) => ({
+        ...prev,
+        [selectedAccountId]: { ...(prev[selectedAccountId] || {}), [field]: value },
+      }))
+    } else if (selectedPlatform) {
+      setPlatformConfigs((prev) => ({
+        ...prev,
+        [selectedPlatform]: { ...(prev[selectedPlatform] || { title: '', description: '', tags: [] }), [field]: value },
+      }))
     }
   }
 
-  function addTag() {
-    const t = tagInput.trim()
-    if (t && !publishTags.includes(t)) {
-      setPublishTags(prev => [...prev, t])
+  const addTag = (tag: string) => {
+    const t = tag.trim()
+    if (!t) return
+    const currentTags = currentConfig.tags
+    if (currentTags.includes(t)) return
+    updateCurrentConfig('tags', [...currentTags, t])
+  }
+
+  const removeTag = (tag: string) => {
+    updateCurrentConfig('tags', currentConfig.tags.filter((t) => t !== tag))
+  }
+
+  const [tagInput, setTagInput] = useState('')
+
+  const handleTagKeyDown = (e: React.KeyboardEvent<HTMLInputElement>) => {
+    if (e.key === 'Enter') {
+      e.preventDefault()
+      addTag(tagInput)
       setTagInput('')
     }
   }
 
-  function removeTag(t: string) {
-    setPublishTags(prev => prev.filter(x => x !== t))
-  }
+  // --- publish ---
+  const handlePublish = useCallback(async () => {
+    if (!videoData) return
+    if (publishAccountIds.size === 0) return
 
-  // ========== Step Header ==========
-  function StepHeader() {
-    return (
-      <div className="flex items-center gap-1.5 mb-8">
-        {STEPS.map((s, i) => {
-          const n = i + 1
-          const active = n === step
-          const done = n < step
-          return (
-            <div key={s} className="flex items-center gap-2 flex-1">
-              <div className={
-                'flex items-center gap-2 px-3 py-1.5 rounded-full border transition-all text-[12.5px] font-medium ' +
-                (active ? 'bg-violet-50 border-violet-300 text-violet-700' :
-                 done ? 'bg-green-50 border-green-200 text-green-600' :
-                 'bg-white border-gray-200 text-gray-400')
-              }>
-                <span className={
-                  'w-5 h-5 rounded-full flex items-center justify-center text-[11px] font-bold ' +
-                  (active ? 'bg-violet-600 text-white' : done ? 'bg-green-500 text-white' : 'bg-gray-100')
-                }>{done ? '✓' : n}</span>
-                {s}
-              </div>
-              {i < STEPS.length - 1 && (
-                <ChevronRight className={'w-4 h-4 shrink-0 ' + (done || active ? 'text-violet-300' : 'text-gray-200')} />
-              )}
-            </div>
-          )
-        })}
-      </div>
+    setPublishing(true)
+    setPublishProgress(0)
+    setPublishResults([])
+    setShowBatchPublish(true)
+
+    const allTasks = accountGroups.flatMap((group) =>
+      group.accounts
+        .filter((a) => publishAccountIds.has(a.id))
+        .map((a) => ({ account: a, group })),
     )
-  }
 
-  // ========== Step 1: 選擇內容 ==========
-  if (step === 1) {
-    const filtered = WORKS.filter(w =>
-      (!workSearch || w.title.includes(workSearch) || w.subtitle.includes(workSearch)) &&
-      (workTypeFilter === '全部類型' || w.type === workTypeFilter)
-    )
-    return (
-      <div className="p-6">
-        <div className="max-w-[1280px] mx-auto space-y-5">
-          {/* 麪包屑 */}
-          <div className="flex items-center justify-between">
-            <Link to="/smart-editing" className="text-[12px] text-gray-400 hover:text-violet-600 flex items-center gap-1 mb-1">
-              <ChevronLeft className="w-3.5 h-3.5" /> 創作中心 / 一鍵發布
-            </Link>
-            <button className="text-[12.5px] font-medium text-white bg-violet-600 rounded-lg px-4 py-1.5 hover:bg-violet-700 flex items-center gap-1.5 disabled:opacity-40"
-              disabled={selectedWorkCount === 0} onClick={() => setStep(2)}>
-              下一步 <ArrowRight className="w-3.5 h-3.5" />
-            </button>
-          </div>
+    for (let i = 0; i < allTasks.length; i++) {
+      const { account, group } = allTasks[i]
+      setCurrentPublishingAccount(account.name)
+      setPublishProgress(Math.floor((i / allTasks.length) * 100))
 
-          <h1 className="text-xl font-bold text-gray-900">一鍵發布</h1>
-          <p className="text-sm text-gray-500">將您的內容一鍵發佈到多個平臺，高效觸達更多觀眾</p>
+      // Simulate publish delay
+      await new Promise((r) => setTimeout(r, 800 + Math.random() * 400))
 
-          <StepHeader />
+      const success = Math.random() > 0.15
+      setPublishResults((prev) => [
+        ...prev,
+        {
+          label: account.name,
+          status: success ? 'success' : 'error',
+          message: success ? '發布成功' : 'Cookie 已過期，請重新登錄',
+        },
+      ])
+    }
 
-          <div className="rounded-xl bg-white border border-gray-100 p-5 space-y-4">
-            {/* 搜索與篩選 */}
-            <div className="flex items-center gap-3">
-              <div className="relative flex-1 max-w-xs">
-                <Search className="absolute left-3 top-1/2 -translate-y-1/2 w-4 h-4 text-gray-300" />
-                <input value={workSearch} onChange={e=>setWorkSearch(e.target.value)} placeholder="搜索作品名稱" className="w-full pl-9 pr-3 py-2 text-[13px] border border-gray-200 rounded-lg focus:outline-none focus:border-violet-400" />
-              </div>
-              <select value={workTypeFilter} onChange={e=>setWorkTypeFilter(e.target.value)}
-                className="text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-violet-400 bg-white">
-                <option>全部類型</option><option>vlog</option><option>生活記錄</option><option>產品推廣</option><option>知識分享</option><option>美食教程</option>
-              </select>
-            </div>
+    setPublishProgress(100)
+    setCurrentPublishingAccount('')
+    setPublishing(false)
+  }, [videoData, publishAccountIds, accountGroups])
 
-            {/* 作品列表 */}
-            <div className="space-y-2.5">
-              {filtered.map(w => {
-                const sel = selectedWorks.includes(w.id)
-                return (
-                  <label key={w.id} className={'flex items-center gap-3 p-3 rounded-xl border-2 cursor-pointer transition-all ' + (sel ? 'border-violet-400 bg-violet-50/50' : 'border-gray-100 hover:border-gray-200')}>
-                    <input type="checkbox" checked={sel} onChange={()=>toggleWork(w.id)} className="w-4.5 h-4.5 accent-violet-600 rounded cursor-pointer" />
-                    <div className={'w-28 h-16 rounded-lg shrink-0 bg-gradient-to-br ' + w.thumb + ' flex items-center justify-center'}>
-                      <FileVideo className="w-5 h-5 text-white/80" />
-                    </div>
-                    <div className="flex-1 min-w-0">
-                      <div className="text-[13.5px] font-semibold text-gray-800 truncate">{w.title}<span className="font-normal text-gray-500">{w.subtitle}</span></div>
-                      <div className="mt-1 flex items-center gap-3 text-[11.5px] text-gray-400">
-                        <span>{w.type}</span><Clock className="w-3 h-3" /><span>{w.duration}</span><span>更新於 {w.updatedAt}</span>
-                      </div>
-                    </div>
-                  </label>
-                )
-              })}
-              {filtered.length === 0 && (
-                <div className="py-10 text-center text-[13px] text-gray-400">沒有匹配的作品</div>
-              )}
-            </div>
-
-            <div className="flex items-center justify-between pt-2">
-              <div className="text-[13px] text-gray-600">已選擇 <span className="font-bold text-violet-600">{selectedWorkCount}</span> 個作品</div>
-              {selectedWorkCount > 0 && (
-                <button onClick={() => setSelectedWorks([])} className="text-[12.5px] text-violet-600 hover:text-violet-700">清空選擇</button>
-              )}
-            </div>
-
-            <div className="flex justify-end pt-2">
-              <button onClick={() => setStep(2)} disabled={selectedWorkCount === 0} className="flex items-center gap-1.5 text-[13px] font-medium text-white bg-violet-600 rounded-xl px-5 py-2 hover:bg-violet-700 disabled:opacity-40">
-                下一步 <ArrowRight className="w-4 h-4"/>
-              </button>
-            </div>
-          </div>
+  // --- render ---
+  return (
+    <div className="flex h-full overflow-hidden">
+      {/* ============ LEFT SIDEBAR ============ */}
+      <aside className="w-64 flex-shrink-0 bg-white border-r border-gray-100 flex flex-col overflow-hidden">
+        <div className="px-4 py-4 border-b border-gray-100">
+          <h3 className="text-sm font-semibold text-gray-900">發布賬號</h3>
+          <p className="text-xs text-gray-500 mt-0.5">
+            已選 {publishAccountIds.size} 個賬號
+          </p>
         </div>
-      </div>
-    )
-  }
-
-  // ========== Step 2: 選擇平臺 ==========
-  if (step === 2) {
-    return (
-      <div className="p-6">
-        <div className="max-w-[1280px] mx-auto space-y-5">
-          <div className="flex items-center justify-between">
-            <Link to="/smart-editing" className="text-[12px] text-gray-400 hover:text-violet-600 flex items-center gap-1 mb-1">
-              <ChevronLeft className="w-3.5 h-3.5" /> 創作中心 / 一鍵發布
-            </Link>
-            <button onClick={() => window.open('#','_blank')} className="text-[12.5px] text-gray-600 border border-gray-200 rounded-lg px-3 py-1.5 hover:bg-gray-50 flex items-center gap-1.5"><Eye className="w-3.5 h-3.5" /> 發布記錄</button>
-          </div>
-
-          <h1 className="text-xl font-bold text-gray-900">一鍵發布</h1>
-          <p className="text-sm text-gray-500">將您的內容一鍵發佈到多個平臺，高效觸達更多觀眾</p>
-
-          <StepHeader />
-
-          {/* 三欄佈局 */}
-          <div className="grid grid-cols-12 gap-5">
-            {/* 左：選擇內容 */}
-            <div className="col-span-4 space-y-3">
-              <div className="flex items-center gap-2 mb-1">
-                <Search className="w-4 h-4 text-gray-300" />
-                <input value={workSearch} onChange={e=>setWorkSearch(e.target.value)} placeholder="搜索作品名稱" className="flex-1 text-[12.5px] border border-gray-200 rounded-lg pl-2 pr-3 py-2 focus:outline-none focus:border-violet-400" />
-                <select className="text-[12.5px] border border-gray-200 rounded-lg px-2.5 py-2 focus:outline-none focus:border-violet-400 bg-white appearance-none pr-7 bg-no-repeat bg-[right_6px_center]"
-                  style={{backgroundImage:`url("data:image/svg+xml,%3csvg xmlns='http://www.w3.org/2000/svg' width='10' height='10'%3e%3cpath d='M1 3l4 4 4-4' stroke='%239ca3af' fill='none' stroke-width='1.5'/%3e%3c/svg%3e")`}}>
-                  <option>全部類型</option>
-                </select>
-              </div>
-              <div className="space-y-2">
-                {WORKS.map(w => {
-                  const sel = selectedWorks.includes(w.id)
+        <div className="flex-1 overflow-y-auto px-3 py-2 space-y-1">
+          {accountGroups.map((group) => {
+            const hasAccounts = group.accounts.length > 0
+            return (
+              <div key={group.key}>
+                <button
+                  onClick={() => hasAccounts && toggleGroup(group.key)}
+                  className={`w-full flex items-center gap-2.5 px-3 py-2 rounded-lg text-sm font-medium transition-all ${
+                    selectedPlatform === group.key && !selectedAccountId
+                      ? 'bg-violet-50 text-violet-700'
+                      : hasAccounts
+                      ? 'text-gray-600 hover:bg-gray-50'
+                      : 'text-gray-300 cursor-not-allowed'
+                  }`}
+                >
+                  <span
+                    className="w-2.5 h-2.5 rounded-full flex-shrink-0"
+                    style={{ backgroundColor: group.color, opacity: hasAccounts ? 1 : 0.3 }}
+                  />
+                  <span>{group.name}</span>
+                  <span className="ml-auto text-xs text-gray-400">{group.accounts.length}</span>
+                </button>
+                {expandedGroups.has(group.key) && group.accounts.map((acc) => {
+                  const isSelected = selectedAccountId === acc.id
+                  const isPublishSelected = publishAccountIds.has(acc.id)
                   return (
-                    <label key={w.id} className={'flex items-center gap-3 p-2.5 rounded-xl border-2 cursor-pointer transition-all ' + (sel ? 'border-violet-400 bg-violet-50/50' : 'border-gray-100 hover:border-gray-200')}>
-                      <input type="checkbox" checked={sel} onChange={()=>toggleWork(w.id)} className="w-4 h-4 accent-violet-600 rounded cursor-pointer shrink-0" />
-                      <div className={'w-24 h-14 rounded-lg shrink-0 bg-gradient-to-br ' + w.thumb + ' flex items-center justify-center'}>
-                        <FileVideo className="w-4 h-4 text-white/80" />
-                      </div>
-                      <div className="min-w-0 flex-1">
-                        <div className="text-[12.5px] font-semibold text-gray-800 truncate">{w.title}<span className="font-normal text-gray-500">{w.subtitle}</span></div>
-                        <div className="mt-0.5 flex items-center gap-2 text-[11px] text-gray-400"><Clock className="w-3 h-3" /><span>{w.duration}</span><span>更新於 {w.updatedAt}</span></div>
-                      </div>
-                    </label>
+                    <div
+                      key={acc.id}
+                      className="ml-6 flex items-center gap-2"
+                    >
+                      <button
+                        onClick={() => selectAccount(acc, group.key)}
+                        className={`flex-1 text-left px-3 py-1.5 rounded-lg text-sm transition-all ${
+                          isSelected
+                            ? 'bg-violet-100 text-violet-800'
+                            : 'text-gray-500 hover:bg-gray-50'
+                        }`}
+                      >
+                        <span className="truncate block">{acc.name}</span>
+                      </button>
+                      <button
+                        onClick={() => toggleAccountSelection(acc.id)}
+                        className={`w-4 h-4 rounded border-2 flex items-center justify-center flex-shrink-0 transition-all ${
+                          isPublishSelected
+                            ? 'bg-violet-500 border-violet-500'
+                            : 'border-gray-300 hover:border-violet-400'
+                        }`}
+                      >
+                        {isPublishSelected && <Check className="w-2.5 h-2.5 text-white" />}
+                      </button>
+                    </div>
                   )
                 })}
               </div>
-              <div className="flex items-center justify-between pt-1 text-[12.5px]">
-                <span className="text-gray-600">已選擇 <span className="font-bold text-violet-600">{selectedWorkCount}</span> 個作品</span>
-                <button onClick={() => setSelectedWorks([])} className="text-violet-600 hover:text-violet-700">清空選擇</button>
-              </div>
-            </div>
+            )
+          })}
+        </div>
+      </aside>
 
-            {/* 中：選擇發佈平臺 */}
-            <div className="col-span-5 space-y-3">
-              <div className="flex items-center justify-between">
-                <div>
-                  <div className="text-[14px] font-bold text-gray-800">選擇發佈平臺</div>
-                  <div className="text-[11.5px] text-gray-400 mt-0.5">已選擇 {selectedPlatforms.length}/{authorizedCount} 個平臺</div>
-                </div>
-                <button onClick={toggleAllPlatforms} className="text-[12px] text-violet-600 hover:text-violet-700 font-medium">{selectedPlatforms.length === authorizedCount && selectedPlatforms.every(p => PLATFORMS.find(pl=>pl.id===p)?.authorized) ? '取消全選' : '全選'}</button>
+      {/* ============ MAIN AREA ============ */}
+      <main className="flex-1 flex flex-col min-w-0 overflow-hidden">
+        {/* Top Header */}
+        <header className="flex items-center justify-between px-6 py-3.5 border-b border-gray-100 bg-gradient-to-r from-violet-50/50 via-transparent to-transparent flex-shrink-0">
+          <div className="flex items-center gap-3">
+            <h2 className="text-lg font-bold text-gray-900 tracking-tight">發布視頻</h2>
+            {currentPlatform && (
+              <span
+                className="text-xs font-semibold px-3 py-1 rounded-full"
+                style={{
+                  background: currentPlatform.bgColor,
+                  color: currentPlatform.color,
+                }}
+              >
+                {currentPlatform.name}
+                {currentAccount ? ` · ${currentAccount.name}` : ' · 默認設置'}
+              </span>
+            )}
+          </div>
+          <div className="flex items-center gap-2">
+            <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">
+              <FileText className="w-4 h-4" />
+              <span>保存草稿</span>
+            </button>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">
+              <Wand2 className="w-4 h-4" />
+              <span>一鍵填寫</span>
+            </button>
+            <button className="flex items-center gap-1.5 px-3 py-1.5 text-sm text-gray-600 bg-white border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">
+              <Settings className="w-4 h-4" />
+              <span>批量設置</span>
+            </button>
+            <button
+              disabled={publishing || !videoData || publishAccountIds.size === 0}
+              onClick={handlePublish}
+              className="flex items-center gap-1.5 px-5 py-1.5 text-sm font-bold text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg shadow-lg shadow-violet-200 hover:shadow-xl hover:shadow-violet-200 hover:-translate-y-0.5 transition-all disabled:opacity-50 disabled:cursor-not-allowed disabled:shadow-none disabled:hover:translate-y-0"
+            >
+              <Send className="w-4 h-4" />
+              <span>{publishing ? '發布中...' : '一鍵發布'}</span>
+            </button>
+          </div>
+        </header>
+
+        {/* Content Area */}
+        <div className="flex-1 flex overflow-hidden">
+          {/* Form */}
+          <div className="flex-1 overflow-y-auto px-6 py-6">
+            {/* ===== Public Config ===== */}
+            <div className="mb-8">
+              <div className="flex items-center gap-3 mb-5">
+                <div className="w-1 h-5 bg-gradient-to-b from-violet-500 to-indigo-500 rounded-full shadow-sm shadow-violet-200" />
+                <span className="text-base font-bold text-gray-900">公共配置</span>
+                <span className="text-xs text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full">所有賬號共享</span>
               </div>
-              <div className="grid grid-cols-2 gap-2.5">
-                {PLATFORMS.map(p => {
-                  const sel = selectedPlatforms.includes(p.id)
-                  return (
-                    <button key={p.id} onClick={() => p.authorized && togglePlatform(p.id)}
-                      disabled={!p.authorized}
-                      className={'flex items-center gap-3 p-3 rounded-xl border-2 text-left transition-all ' +
-                        (sel ? 'border-violet-400 bg-violet-50/60' : 'border-gray-100 hover:border-gray-200') +
-                        (!p.authorized ? ' opacity-50 cursor-not-allowed' : '')
-                      }>
-                      <div className="w-9 h-9 rounded-lg flex items-center justify-center text-lg shrink-0" style={{backgroundColor:p.color+'15'}}>
-                        <span>{p.icon}</span>
-                      </div>
-                      <div className="flex-1 min-w-0">
-                        <div className="text-[13px] font-semibold text-gray-800">{p.name}</div>
-                        <div className="text-[11px] mt-0.5">{p.authorized ? '已授權' : '未授權'}</div>
-                      </div>
-                      <div className="shrink-0">
-                        {sel ? (
-                          <CheckCircle2 className="w-5 h-5 text-violet-500" />
-                        ) : (
-                          <div className="w-5 h-5 rounded border-2 border-gray-200" />
-                        )}
-                      </div>
+
+              {/* Cover */}
+              <div className="border border-gray-100 rounded-xl p-4 mb-4 bg-gray-50/30">
+                <label className="text-sm font-semibold text-gray-600 mb-3 block">封面</label>
+                <div className="flex gap-4">
+                  {/* Portrait cover */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs text-gray-400">豎版封面 (9:16)</span>
+                    <button
+                      onClick={triggerUploadCover}
+                      className="w-[120px] h-[213px] border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-violet-300 hover:bg-violet-50/50 transition-all"
+                    >
+                      {coverPortrait ? (
+                        <img src={coverPortrait.url} alt="portrait cover" className="w-full h-full object-cover rounded-xl" />
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5 text-gray-300" />
+                          <span className="text-[10px] text-gray-400">上傳封面</span>
+                        </>
+                      )}
                     </button>
-                  )
-                })}
+                  </div>
+                  {/* Landscape cover */}
+                  <div className="flex flex-col gap-2">
+                    <span className="text-xs text-gray-400">橫版封面 (16:9)</span>
+                    <button
+                      onClick={triggerUploadCover}
+                      className="w-[213px] h-[120px] border-2 border-dashed border-gray-200 rounded-xl flex flex-col items-center justify-center gap-1.5 hover:border-violet-300 hover:bg-violet-50/50 transition-all"
+                    >
+                      {coverLandscape ? (
+                        <img src={coverLandscape.url} alt="landscape cover" className="w-full h-full object-cover rounded-xl" />
+                      ) : (
+                        <>
+                          <Upload className="w-5 h-5 text-gray-300" />
+                          <span className="text-[10px] text-gray-400">上傳封面</span>
+                        </>
+                      )}
+                    </button>
+                  </div>
+                </div>
               </div>
-              <button className="w-full py-2.5 border border-dashed border-violet-300 rounded-xl text-[12.5px] text-violet-600 hover:bg-violet-50/50 font-medium flex items-center justify-center gap-1.5">
-                <Plus className="w-4 h-4" /> 添加自定義平臺
+            </div>
+
+            {/* Divider */}
+            <div className="h-px bg-gradient-to-r from-transparent via-violet-200 to-transparent my-6" />
+
+            {/* ===== Platform-specific Settings ===== */}
+            {selectedPlatform && publishAccountIds.size > 0 && (
+              <div>
+                <div className="flex items-center gap-3 mb-5">
+                  <div
+                    className="w-1 h-5 rounded-full shadow-sm"
+                    style={{ backgroundColor: currentPlatform?.color }}
+                  />
+                  <span className="text-base font-bold text-gray-900">
+                    {currentPlatform?.name}
+                    {currentAccount ? ` · ${currentAccount.name}` : ' · 默認設置'}
+                  </span>
+                  <span className="text-xs text-gray-400 bg-gray-50 px-2.5 py-1 rounded-full">
+                    {currentAccount ? '僅對該賬號生效' : '對該分組所有未自定義的賬號生效'}
+                  </span>
+                </div>
+
+                {/* 小紅書警告 */}
+                {selectedPlatform === 'xiaohongshu' && (
+                  <div className="flex items-center gap-2 p-3 mb-4 bg-red-50 border-2 border-red-400 rounded-lg text-red-600 text-sm font-semibold animate-pulse">
+                    <AlertTriangle className="w-5 h-5 flex-shrink-0" />
+                    <span>由於小紅書反檢測機制比較惡心，如果出現被警告的情況！請立即停止使用小紅書渠道！</span>
+                  </div>
+                )}
+
+                <div className="space-y-4 max-w-lg">
+                  {/* Title */}
+                  <div
+                    className="p-4 rounded-xl border transition-all"
+                    style={{ borderColor: (currentPlatform?.color || '#ddd') + '26', background: (currentPlatform?.color || '#f5f5f5') + '0a' }}
+                  >
+                    <label className="text-sm font-medium mb-1.5 block" style={{ color: currentPlatform?.color }}>
+                      標題
+                    </label>
+                    <input
+                      type="text"
+                      value={currentConfig.title}
+                      onChange={(e) => updateCurrentConfig('title', e.target.value)}
+                      placeholder="請輸入標題..."
+                      maxLength={100}
+                      className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
+                    />
+                    <div className="text-right text-[11px] text-gray-400 mt-1">
+                      {currentConfig.title.length}/100
+                    </div>
+                  </div>
+
+                  {/* Description */}
+                  <div
+                    className="p-4 rounded-xl border transition-all"
+                    style={{ borderColor: (currentPlatform?.color || '#ddd') + '26', background: (currentPlatform?.color || '#f5f5f5') + '0a' }}
+                  >
+                    <label className="text-sm font-medium mb-1.5 block" style={{ color: currentPlatform?.color }}>
+                      描述
+                    </label>
+                    <textarea
+                      value={currentConfig.description}
+                      onChange={(e) => updateCurrentConfig('description', e.target.value)}
+                      placeholder="請輸入描述..."
+                      rows={5}
+                      maxLength={2000}
+                      className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all resize-none"
+                    />
+                    <div className="text-right text-[11px] text-gray-400 mt-1">
+                      {currentConfig.description.length}/2000
+                    </div>
+                  </div>
+
+                  {/* Tags */}
+                  <div
+                    className="p-4 rounded-xl border transition-all"
+                    style={{ borderColor: (currentPlatform?.color || '#ddd') + '26', background: (currentPlatform?.color || '#f5f5f5') + '0a' }}
+                  >
+                    <label className="text-sm font-medium mb-1.5 block" style={{ color: currentPlatform?.color }}>
+                      標籤
+                    </label>
+                    <div className="text-xs text-gray-400 mb-2">
+                      {selectedPlatform === 'douyin'
+                        ? '官方活動 + 標籤最多 5 個，按回車確認'
+                        : selectedPlatform === 'kuaishou'
+                        ? '輸入標籤內容，按回車確認（最多 4 個）'
+                        : '輸入標籤內容，按回車確認'}
+                    </div>
+                    <input
+                      type="text"
+                      value={tagInput}
+                      onChange={(e) => setTagInput(e.target.value)}
+                      onKeyDown={handleTagKeyDown}
+                      placeholder="輸入標籤內容，按回車添加"
+                      className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all"
+                    />
+                    {currentConfig.tags.length > 0 && (
+                      <div className="flex flex-wrap gap-1.5 mt-2">
+                        {currentConfig.tags.map((tag) => (
+                          <span
+                            key={tag}
+                            className="inline-flex items-center gap-1 px-2.5 py-1 bg-violet-50 text-violet-700 border border-violet-200 rounded-full text-xs"
+                          >
+                            #{tag}
+                            <button onClick={() => removeTag(tag)} className="hover:text-violet-900 ml-0.5">
+                              <X className="w-3 h-3" />
+                            </button>
+                          </span>
+                        ))}
+                      </div>
+                    )}
+                  </div>
+
+                  {/* Platform-specific fields */}
+                  {selectedPlatform === 'bilibili' && (
+                    <div
+                      className="p-4 rounded-xl border transition-all"
+                      style={{ borderColor: (currentPlatform?.color || '#ddd') + '26', background: (currentPlatform?.color || '#f5f5f5') + '0a' }}
+                    >
+                      <label className="text-sm font-medium mb-1.5 block" style={{ color: currentPlatform?.color }}>
+                        分區
+                      </label>
+                      <select
+                        className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-violet-400 text-gray-600"
+                      >
+                        <option value="">請選擇分區</option>
+                        <option value="knowledge">知識</option>
+                        <option value="life">生活</option>
+                        <option value="game">遊戲</option>
+                        <option value="entertainment">娛樂</option>
+                        <option value="tech">科技</option>
+                      </select>
+                    </div>
+                  )}
+
+                  {/* AI Content Declaration */}
+                  <div
+                    className="p-4 rounded-xl border transition-all"
+                    style={{ borderColor: (currentPlatform?.color || '#ddd') + '26', background: (currentPlatform?.color || '#f5f5f5') + '0a' }}
+                  >
+                    <label className="text-sm font-medium mb-1.5 block" style={{ color: currentPlatform?.color }}>
+                      作品聲明
+                    </label>
+                    <select
+                      value={currentConfig.aiContent || ''}
+                      onChange={(e) => updateCurrentConfig('aiContent', e.target.value)}
+                      className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-violet-400 text-gray-600"
+                    >
+                      <option value="">請選擇</option>
+                      <option value="ai_generated">內容由 AI 生成</option>
+                      <option value="ai_assisted">內容由 AI 輔助創作</option>
+                      <option value="original">原創內容</option>
+                      <option value="repost">轉載內容</option>
+                    </select>
+                  </div>
+
+                  {/* Schedule */}
+                  <div
+                    className="p-4 rounded-xl border transition-all"
+                    style={{ borderColor: (currentPlatform?.color || '#ddd') + '26', background: (currentPlatform?.color || '#f5f5f5') + '0a' }}
+                  >
+                    <label className="text-sm font-medium mb-1.5 block" style={{ color: currentPlatform?.color }}>
+                      定時發布
+                    </label>
+                    <input
+                      type="datetime-local"
+                      value={currentConfig.scheduleTime || ''}
+                      onChange={(e) => updateCurrentConfig('scheduleTime', e.target.value)}
+                      className="w-full px-3 py-2 text-sm bg-gray-50 border border-gray-200 rounded-lg outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all text-gray-600"
+                    />
+                    <div className="text-xs text-gray-400 mt-1">
+                      留空則立即發布
+                    </div>
+                  </div>
+                </div>
+              </div>
+            )}
+
+            {/* No account selected */}
+            {publishAccountIds.size === 0 && (
+              <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-violet-100 rounded-xl">
+                <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
+                  <Smartphone className="w-8 h-8 text-gray-300" />
+                </div>
+                <p className="text-sm text-gray-500 font-medium">請先在左側賬號設置</p>
+                <p className="text-xs text-gray-400 mt-1">選擇賬號後才能配置對應渠道的發布設置</p>
+              </div>
+            )}
+
+            {publishAccountIds.size > 0 && !selectedPlatform && (
+              <div className="flex flex-col items-center justify-center py-20 text-center border-2 border-dashed border-violet-100 rounded-xl">
+                <div className="w-16 h-16 rounded-full bg-gray-50 flex items-center justify-center mb-4">
+                  <Play className="w-8 h-8 text-gray-300" />
+                </div>
+                <p className="text-sm text-gray-500 font-medium">請在左側選擇一個平台分組</p>
+                <p className="text-xs text-gray-400 mt-1">選擇後可配置該平台的個性化發布設置</p>
+              </div>
+            )}
+          </div>
+
+          {/* Right: Phone Preview */}
+          <aside className="w-[360px] flex-shrink-0 bg-gradient-to-b from-white to-gray-50/50 border-l border-gray-100 flex flex-col items-center justify-center overflow-y-auto">
+            <div className="px-5 py-4 border-b border-gray-100 w-full flex items-center justify-between">
+              <span className="text-sm font-bold text-gray-900">視頻預覽</span>
+            </div>
+
+            {/* Phone Mockup */}
+            <div className="py-6 px-4 w-full flex justify-center">
+              <div className={`relative bg-gradient-to-b from-[#1e1e3a] to-[#14142a] border-2 border-violet-200/30 rounded-[28px] p-2.5 shadow-2xl shadow-gray-300/50 w-[85%] ${
+                videoData?.orientation === 'horizontal' ? 'aspect-[16/10]' : 'aspect-[9/16]'
+              }`}>
+                <div className="w-16 h-1.5 bg-gray-600 rounded-full mx-auto mb-2" />
+                <div className="flex-1 bg-gray-900 rounded-2xl overflow-hidden flex items-center justify-center mx-0.5 mb-1">
+                  {videoData ? (
+                    <video
+                      src={videoData.url}
+                      controls
+                      preload="metadata"
+                      className="w-full h-full object-contain"
+                    />
+                  ) : (
+                    <button
+                      onClick={triggerUploadVideo}
+                      className="flex flex-col items-center gap-2 text-gray-400 hover:text-violet-400 transition-all"
+                    >
+                      <Upload className="w-7 h-7" />
+                      <span className="text-xs font-medium">上傳視頻</span>
+                    </button>
+                  )}
+                </div>
+                <div className="w-10 h-1 bg-gradient-to-r from-violet-400 to-blue-400 rounded-full mx-auto mt-1.5 opacity-50" />
+              </div>
+            </div>
+
+            {/* Video Actions */}
+            <div className="flex gap-2 px-5 pb-4 w-full">
+              <button
+                onClick={triggerUploadVideo}
+                className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-violet-600 bg-violet-50 border border-violet-200 rounded-lg hover:bg-violet-100 transition-all"
+              >
+                <Upload className="w-3.5 h-3.5" />
+                <span>本地上傳</span>
+              </button>
+              <button className="flex-1 flex items-center justify-center gap-1.5 py-2 text-xs font-medium text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 transition-all">
+                <Image className="w-3.5 h-3.5" />
+                <span>素材庫</span>
               </button>
             </div>
 
-            {/* 右：平臺授權狀態 */}
-            <div className="col-span-3 space-y-4">
-              <div className="text-[14px] font-bold text-gray-800">平臺授權狀態</div>
-              <div className="flex flex-col items-center py-4">
-                {/* 圓形進度 */}
-                <svg width="140" height="140" viewBox="0 0 140 140">
-                  <circle cx="70" cy="70" r="58" fill="none" stroke="#f3f4f6" strokeWidth="10" />
-                  <circle cx="70" cy="70" r="58" fill="none" stroke="#7c3aed" strokeWidth="10"
-                    strokeLinecap="round" strokeDasharray={`${(authorizedCount / totalCount) * 364.4} ${364.4}`}
-                    transform="rotate(-90 70 70)" />
-                </svg>
-                <div className="-mt-[105px] flex flex-col items-center">
-                  <div className="text-[12px] text-gray-400">已授權平臺</div>
-                  <div className="text-[32px] font-bold text-gray-900 leading-none mt-0.5">{authorizedCount} <span className="text-base text-gray-400 font-normal">/ {totalCount}</span></div>
-                </div>
+            {/* Video Info */}
+            {videoData && (
+              <div className="mx-5 mb-5 px-3 py-2.5 bg-gray-50 border border-gray-100 rounded-lg flex items-center justify-between w-[calc(100%-40px)]">
+                <span className="text-xs text-gray-600 truncate flex-1">{videoData.name}</span>
+                <button onClick={clearVideo} className="text-gray-400 hover:text-red-500 flex-shrink-0 ml-2">
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
-              <div className="space-y-2 px-2">
-                <div className="flex items-center justify-between text-[12.5px]">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-violet-500" /> 已授權</span>
-                  <span className="font-medium text-gray-800">{authorizedCount}</span>
-                </div>
-                <div className="flex items-center justify-between text-[12.5px]">
-                  <span className="flex items-center gap-1.5"><span className="w-2.5 h-2.5 rounded-full bg-gray-200" /> 未授權</span>
-                  <span className="font-medium text-gray-800">{totalCount - authorizedCount}</span>
-                </div>
-              </div>
-              <button className="w-full mt-2 text-[12.5px] text-violet-600 hover:text-violet-700 font-medium py-2">賬號管理</button>
-            </div>
-          </div>
+            )}
 
-          {/* 溫馨提示 + 底部按鈕 */}
-          <div className="rounded-xl bg-violet-50/60 border border-violet-100 p-4 flex items-start gap-2.5">
-            <Info className="w-4.5 h-4.5 text-violet-500 shrink-0 mt-0.5" />
-            <div className="text-[12.5px] text-gray-600 leading-relaxed">
-              <span className="font-medium text-violet-700">溫馨提示</span><br/>
-              請確保您的各平臺賬號狀態正常，發布內容需遵守各平臺規範，避免違規導致發佈失敗。
-            </div>
-          </div>
-          <div className="flex items-center justify-end gap-3">
-            <button onClick={() => setStep(1)} className="flex items-center gap-1.5 text-[13px] text-gray-600 border border-gray-200 rounded-xl px-5 py-2 hover:bg-gray-50">
-              保存為模板
-            </button>
-            <button onClick={() => setStep(1)} className="flex items-center gap-1.5 text-[13px] text-gray-600 border border-gray-200 rounded-xl px-5 py-2 hover:bg-gray-50">
-              <ChevronLeft className="w-4 h-4" /> 上一步
-            </button>
-            <button onClick={() => setStep(3)} disabled={selectedWorkCount === 0 || selectedPlatforms.length === 0}
-              className="flex items-center gap-1.5 text-[13px] font-medium text-white bg-violet-600 rounded-xl px-5 py-2 hover:bg-violet-700 disabled:opacity-40">
-              下一步 <ArrowRight className="w-4 h-4"/>
-            </button>
-          </div>
-        </div>
-      </div>
-    )
-  }
-
-  // ========== Step 3: 內容設置 ==========
-  if (step === 3) {
-    return (
-      <div className="p-6">
-        <div className="max-w-[960px] mx-auto space-y-5">
-          <StepHeader />
-          <div className="rounded-xl bg-white border border-gray-100 p-6 space-y-5">
-            <h3 className="text-[15px] font-bold text-gray-800">內容設置</h3>
-
-            <div className="space-y-1.5">
-              <label className="text-[12.5px] text-gray-500 font-medium">標題</label>
-              <input value={publishTitle} onChange={e=>setPublishTitle(e.target.value)}
-                className="w-full text-[14px] border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-violet-400" />
-              <div className="text-[11px] text-gray-400 text-right">{publishTitle.length}/60</div>
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[12.5px] text-gray-500 font-medium">描述</label>
-              <textarea value={publishDesc} onChange={e=>setPublishDesc(e.target.value)} rows={3}
-                placeholder="為您的作品添加一段簡短描述，吸引更多觀眾..."
-                className="w-full text-[13.5px] border border-gray-200 rounded-xl px-4 py-2.5 focus:outline-none focus:border-violet-400 resize-none" />
-            </div>
-
-            <div className="space-y-1.5">
-              <label className="text-[12.5px] text-gray-500 font-medium">標籤</label>
-              <div className="flex items-center gap-2 flex-wrap">
-                {publishTags.map(t => (
-                  <span key={t} className="inline-flex items-center gap-1 text-[12px] bg-violet-50 text-violet-700 border border-violet-200 rounded-full px-3 py-1">
-                    #{t}
-                    <button onClick={() => removeTag(t)} className="hover:text-violet-900">&times;</button>
+            {/* Video Metadata */}
+            {videoData && videoData.duration !== undefined && (
+              <div className="mx-5 mb-5 flex gap-3 w-[calc(100%-40px)] text-xs text-gray-400">
+                {videoData.duration > 0 && (
+                  <span className="flex items-center gap-1">
+                    <Clock className="w-3 h-3" />
+                    {formatDuration(videoData.duration)}
                   </span>
-                ))}
-                <input value={tagInput} onChange={e=>setTagInput(e.target.value)} onKeyDown={e=>{if(e.key==='Enter'){e.preventDefault();addTag()}}}
-                  placeholder="輸入標籤後回車添加" className="flex-1 min-w-[160px] text-[12.5px] border border-gray-200 rounded-full px-3 py-1.5 focus:outline-none focus:border-violet-400" />
+                )}
+                {videoData.size && (
+                  <span>{formatSize(videoData.size)}</span>
+                )}
               </div>
-            </div>
-
-            <div className="grid grid-cols-2 gap-4">
-              <div className="space-y-1.5">
-                <label className="text-[12.5px] text-gray-500 font-medium">封面圖片</label>
-                <div className="border-2 border-dashed border-gray-200 rounded-xl p-6 text-center hover:border-violet-300 cursor-pointer transition-all">
-                  <Upload className="w-8 h-8 text-gray-300 mx-auto mb-2" />
-                  <div className="text-[12.5px] text-gray-500">點擊上傳或拖拽封面</div>
-                  <div className="text-[11px] text-gray-400 mt-1">建議尺寸 1920×1080，支持 JPG/PNG</div>
-                </div>
-              </div>
-              <div className="space-y-1.5">
-                <label className="text-[12.5px] text-gray-500 font-medium">預覽</label>
-                <div className="border border-gray-100 rounded-xl p-4 bg-gray-50/50 h-[152px] flex items-center justify-center text-[12.5px] text-gray-400">
-                  封面預覽區域
-                </div>
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setStep(2)} className="flex items-center gap-1.5 text-[13px] text-gray-600 border border-gray-200 rounded-xl px-5 py-2 hover:bg-gray-50"><ChevronLeft className="w-4 h-4" /> 上一步</button>
-              <button onClick={() => setStep(4)} className="flex items-center gap-1.5 text-[13px] font-medium text-white bg-violet-600 rounded-xl px-5 py-2 hover:bg-violet-700">下一步 <ArrowRight className="w-4 h-4"/></button>
-            </div>
-          </div>
+            )}
+          </aside>
         </div>
-      </div>
-    )
-  }
+      </main>
 
-  // ========== Step 4: 發佈設置 ==========
-  if (step === 4) {
-    return (
-      <div className="p-6">
-        <div className="max-w-[720px] mx-auto space-y-5">
-          <StepHeader />
-          <div className="rounded-xl bg-white border border-gray-100 p-6 space-y-5">
-            <h3 className="text-[15px] font-bold text-gray-800">發布設置</h3>
-
-            <div className="space-y-3">
-              <label className="text-[12.5px] text-gray-500 font-medium">發布時間</label>
-              <div className="flex items-center gap-4">
-                {[{k:'now',l:'立即發佈'},{k:'schedule',l:'定時發佈'}].map(m => (
-                  <button key={m.k} onClick={() => setScheduleMode(m.k as any)}
-                    className={'flex items-center gap-2 px-4 py-2 rounded-xl border text-[13px] font-medium transition-all ' +
-                      (scheduleMode === m.k ? 'border-violet-400 bg-violet-50 text-violet-700' : 'border-gray-200 text-gray-600 hover:bg-gray-50')}>
-                    <div className={'w-4 h-4 rounded-full border-2 flex items-center justify-center ' + (scheduleMode === m.k ? 'border-violet-500' : 'border-gray-300')}>
-                      {scheduleMode === m.k && <div className="w-2 h-2 rounded-full bg-violet-500" />}
+      {/* Batch Publish Dialog */}
+      {showBatchPublish && (
+        <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm">
+          <div className="bg-white rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden">
+            <div className="px-6 py-5 border-b border-gray-100">
+              <h3 className="text-base font-bold text-gray-900">
+                {publishProgress >= 100 ? '發布完成' : '正在發布中...'}
+              </h3>
+            </div>
+            <div className="p-6 space-y-4">
+              {publishProgress < 100 ? (
+                <>
+                  <div className="text-sm text-gray-600">
+                    正在推送到：{currentPublishingAccount}
+                  </div>
+                  <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden">
+                    <div
+                      className="h-full rounded-full bg-gradient-to-r from-violet-500 to-indigo-500 transition-all duration-300"
+                      style={{ width: `${publishProgress}%` }}
+                    />
+                  </div>
+                  <div className="text-center text-sm text-gray-500">{publishProgress}%</div>
+                </>
+              ) : (
+                <div className="space-y-2 max-h-64 overflow-y-auto">
+                  {publishResults.map((r, i) => (
+                    <div key={i} className="flex items-center gap-2 text-sm">
+                      {r.status === 'success' ? (
+                        <Check className="w-4 h-4 text-green-500 flex-shrink-0" />
+                      ) : (
+                        <X className="w-4 h-4 text-red-500 flex-shrink-0" />
+                      )}
+                      <span className="text-gray-700">{r.label}</span>
+                      <span className={`text-xs ml-auto ${r.status === 'success' ? 'text-green-500' : 'text-red-500'}`}>
+                        {r.message}
+                      </span>
                     </div>
-                    {m.l}
-                  </button>
-                ))}
-              </div>
-              {scheduleMode === 'schedule' && (
-                <input type="datetime-local" value={scheduleTime} onChange={e=>setScheduleTime(e.target.value)}
-                  className="text-[13px] border border-gray-200 rounded-lg px-3 py-2 focus:outline-none focus:border-violet-400 ml-6" />
+                  ))}
+                </div>
               )}
             </div>
-
-            <div className="space-y-3">
-              <label className="text-[12.5px] text-gray-500 font-medium">高級選項</label>
-              <div className="space-y-2.5">
-                {[
-                  { label: '自動生成各平臺適配文案', desc: '根據各平臺特性自動調整標題、描述長度與風格', defaultChecked: true },
-                  { label: '啟用互動引導', desc: '在視頻結尾添加關注、點贊、評論引導畫面', defaultChecked: true },
-                  { label: '發布後通知我', desc: '所有平臺完成發送或失敗時推送通知提醒', defaultChecked: false },
-                ].map((opt,i) => (
-                  <label key={i} className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:bg-gray-50/50 cursor-pointer">
-                    <input type="checkbox" defaultChecked={opt.defaultChecked} className="mt-0.5 w-4 h-4 accent-violet-600 rounded" />
-                    <div>
-                      <div className="text-[13px] font-medium text-gray-800">{opt.label}</div>
-                      <div className="text-[11.5px] text-gray-400 mt-0.5">{opt.desc}</div>
-                    </div>
-                  </label>
-                ))}
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setStep(3)} className="flex items-center gap-1.5 text-[13px] text-gray-600 border border-gray-200 rounded-xl px-5 py-2 hover:bg-gray-50"><ChevronLeft className="w-4 h-4" /> 上一步</button>
-              <button onClick={() => setStep(5)} className="flex items-center gap-1.5 text-[13px] font-medium text-white bg-violet-600 rounded-xl px-5 py-2 hover:bg-violet-700">下一步 <ArrowRight className="w-4 h-4"/></button>
+            <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+              <button
+                onClick={() => {
+                  setShowBatchPublish(false)
+                  if (publishProgress >= 100) {
+                    setPublishing(false)
+                    setPublishProgress(0)
+                  }
+                }}
+                disabled={publishing}
+                className="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-indigo-500 rounded-lg hover:shadow-lg transition-all disabled:opacity-50"
+              >
+                {publishProgress >= 100 ? '關閉' : '取消'}
+              </button>
             </div>
           </div>
         </div>
-      </div>
-    )
-  }
+      )}
 
-  // ========== Step 5: 確認發佈 ==========
-  return (
-    <div className="p-6">
-      <div className="max-w-[960px] mx-auto space-y-5">
-        <StepHeader />
-
-        {!isPublishing && publishProgress >= 100 ? (
-          /* 發佈成功 */
-          <div className="rounded-xl bg-white border border-gray-100 p-10 text-center">
-            <div className="w-16 h-16 rounded-full bg-green-50 flex items-center justify-center mx-auto mb-4">
-              <CheckCircle2 className="w-9 h-9 text-green-500" />
-            </div>
-            <h2 className="text-xl font-bold text-gray-900 mb-2">發佈成功！</h2>
-            <p className="text-sm text-gray-500 mb-6">您的內容已成功推送到 {selectedPlatforms.length} 個平臺，可在「發布記錄」中查看詳情。</p>
-            <div className="flex items-center justify-center gap-3">
-              <button onClick={() => { setIsPublishing(false); setPublishProgress(0); setStep(1); }}
-                className="text-[13px] font-medium text-white bg-violet-600 rounded-xl px-5 py-2 hover:bg-violet-700">
-                繼續發佈新內容
-              </button>
-              <Link to="/final-preview" className="text-[13px] font-medium text-violet-600 border border-violet-200 rounded-xl px-5 py-2 hover:bg-violet-50">
-                查看發布記錄
-              </Link>
-            </div>
-          </div>
-        ) : !isPublishing ? (
-          /* 確認頁 */
-          <div className="rounded-xl bg-white border border-gray-100 p-6 space-y-5">
-            <h3 className="text-[15px] font-bold text-gray-800 flex items-center gap-2"><CheckCircle2 className="w-5 h-5 text-violet-500" /> 確認並發佈</h3>
-
-            <div className="grid grid-cols-3 gap-4">
-              <div className="p-4 rounded-xl bg-gray-50">
-                <div className="text-[11.5px] text-gray-400">待發佈作品</div>
-                <div className="text-[14px] font-bold text-gray-800 mt-1">{selectedWorkCount} 個</div>
-                <div className="text-[11.5px] text-gray-500 mt-0.5">{WORKS.find(w=>selectedWorks.includes(w.id))?.title ?? ''}</div>
-              </div>
-              <div className="p-4 rounded-xl bg-gray-50">
-                <div className="text-[11.5px] text-gray-400">目標平臺</div>
-                <div className="text-[14px] font-bold text-gray-800 mt-1">{selectedPlatforms.length} 個</div>
-                <div className="text-[11.5px] text-gray-500 mt-0.5">{selectedPlatforms.map(pid=>PLATFORMS.find(p=>p.id===pid)?.name).filter(Boolean).join(' / ')}</div>
-              </div>
-              <div className="p-4 rounded-xl bg-violet-50">
-                <div className="text-[11.5px] text-violet-500">發佈時間</div>
-                <div className="text-[14px] font-bold text-violet-700 mt-1">{scheduleMode==='now'?'立即':scheduleTime||'未設定'}</div>
-                <div className="text-[11.5px] text-violet-500 mt-0.5">{publishTags.join(' #')}</div>
-              </div>
-            </div>
-
-            <div className="rounded-xl bg-amber-50 border border-amber-200 p-3.5 flex items-start gap-2.5">
-              <AlertCircle className="w-4.5 h-4.5 text-amber-500 shrink-0 mt-0.5" />
-              <div className="text-[12.5px] text-amber-800 leading-relaxed">
-                發佈後將同時推送到 {selectedPlatforms.length} 個平臺。請確保各平臺賬號狀態正常且內容符合平臺規範。
-              </div>
-            </div>
-
-            <div className="flex justify-end gap-3 pt-2">
-              <button onClick={() => setStep(4)} className="flex items-center gap-1.5 text-[13px] text-gray-600 border border-gray-200 rounded-xl px-5 py-2 hover:bg-gray-50"><ChevronLeft className="w-4 h-4" /> 上一步</button>
-              <button onClick={() => { setIsPublishing(true); setPublishProgress(0); const t=setInterval(()=>{ setPublishProgress(p=>{ if(p>=100){clearInterval(t);return 100;} return p+Math.max(1,Math.random()*4) }) },150) }}
-                className="flex items-center gap-1.5 text-[13px] font-medium text-white bg-violet-600 rounded-xl px-6 py-2.5 hover:bg-violet-700">
-                <Send className="w-4 h-4" /> 確認發佈
-              </button>
-            </div>
-          </div>
-        ) : (
-          /* 發佈中 */
-          <div className="rounded-xl bg-white border border-gray-100 p-10 text-center">
-            <div className="w-20 h-20 rounded-full border-4 border-violet-200 border-t-violet-600 animate-spin mx-auto mb-6"></div>
-            <h2 className="text-lg font-bold text-gray-900 mb-2">正在發佈中...</h2>
-            <div className="text-sm text-gray-500 mb-4">正在同步推送到 {selectedPlatforms.length} 個平臺</div>
-            <div className="max-w-xs mx-auto">
-              <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all duration-300" style={{width:`${publishProgress}%`}}></div>
-              </div>
-              <div className="text-[12px] text-gray-400 mt-2">{Math.round(publishProgress)}% 完成</div>
-            </div>
-          </div>
-        )}
-      </div>
+      {/* Hidden inputs */}
+      <input ref={videoInputRef} type="file" accept="video/*" className="hidden" onChange={handleVideoChange} />
+      <input ref={coverInputRef} type="file" accept="image/*" className="hidden" onChange={handleCoverChange} />
     </div>
-  )
-}
-
-/* Helper: ArrowRight icon inline */
-function ArrowRight({className=''}:{className?:string}) {
-  return (
-    <svg className={className} xmlns="http://www.w3.org/2000/svg" width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-      <path d="M5 12h14M12 5l7 7-7 7"/>
-    </svg>
   )
 }

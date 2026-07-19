@@ -1,17 +1,19 @@
-import { useState } from 'react'
+import { useState, useEffect, useCallback } from 'react'
 import type { ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import {
-  ChevronLeft, Camera, User, Lock, Shield,
-  Monitor, Clock, Crown, ArrowRight, Plus, Link2,
-  TrendingUp, FileVideo, Play, Phone,
-  Users as UsersIcon,
-  Settings, Bell,
+  ChevronLeft, Camera, User, Lock, Shield, Eye, EyeOff,
+  Monitor, Clock, Crown, ArrowRight, Plus, Link2, X,
+  TrendingUp, FileVideo, Play, Phone, AlertTriangle, Check,
+  Users as UsersIcon, Laptop, Smartphone, MapPin, Globe,
+  Settings, Bell, Loader2, KeyRound, Fingerprint, Smartphone as PhoneIcon,
 } from 'lucide-react'
+import { securityApi, formatRelativeTime, formatDateTime } from '../lib/api'
+import type { Device, LoginRecord, TwoFactorStatus } from '../lib/api'
 
 // ============ Tab 定義 ============
 const TABS = [
-  { key: 'profile', label: '帳號資��', icon: User },
+  { key: 'profile', label: '帳號資訊', icon: User },
   { key: 'security', label: '安全設置', icon: Lock },
   { key: 'prefs',    label: '我的偏好',   icon: Settings },
   { key: 'notify',   label: '通知設置',   icon: Bell },
@@ -23,7 +25,7 @@ type TabKey = typeof TABS[number]['key']
 interface BindAccount {
   id: string
   platform: string
-  icon: ReactNode;
+  icon: ReactNode
   status: 'bound' | 'unbound'
   account?: string
   color?: string
@@ -32,14 +34,10 @@ interface BindAccount {
 const BIND_ACCOUNTS: BindAccount[] = [
   {
     id: 'wechat', platform: '微信',
-    icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#07C160"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.18A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.18 1.17 1.17 0 01-1.162-1.18c0-.651.52-1.18 1.162-1.18zm5.34 2.67c-4.402 0-8.001 2.79-8.001 6.229s3.6 6.228 8.001 6.228c.86 0 1.687-.122 2.463-.35a.88.88 0 01.72.098l1.627.951a.28.28 0 00.143.047c.138 0 .25-.114.25-.253 0-.066-.027-.13-.043-.192l-.334-1.264a.502.502 0 01.182-.567C21.774 17.888 23 16.09 23 14.089c0-3.44-3.6-6.229-8.002-6.229zm-3.06 3.37c.55 0 .996.454.996 1.014a1.005 1.005 0 01-.996 1.014 1.005 1.005 0 01-.996-1.014c0-.56.446-1.014.996-1.014zm6.12 0c.55 0 .996.454.996 1.014a1.005 1.005 0 01-.996 1.014 1.005 1.005 0 01-.996-1.014c0-.56.446-1.014.996-1.014z"/></svg>,
+    icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#07C160"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.18A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.18 1.17 1.17 0 01-1.162-1.18c0-.651.52-1.18 1.162-1.18z"/></svg>,
     status: 'bound', account: '創作者888', color: '#07C160',
   },
-  {
-    id: 'phone', platform: '手機號',
-    icon: <Phone className="w-5 h-5 text-blue-500"/>, status: 'bound',
-    account: '138****8888', color: '#3B82F6',
-  },
+  { id: 'phone', platform: '手機號', icon: <Phone className="w-5 h-5 text-blue-500"/>, status: 'bound', account: '138****8888', color: '#3B82F6' },
   {
     id: 'google', platform: 'Google',
     icon: <svg viewBox="0 0 24 24" className="w-5 h-5"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>,
@@ -50,19 +48,203 @@ const BIND_ACCOUNTS: BindAccount[] = [
     icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#000"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.83-3.12 1.87-.2.87-2.05 11.18zM15.61 4.68c.71-1.03 1.27-2.41 1.09-3.82-1.18.05-2.54.81-3.33 1.89-.73.98-1.27 2.39-1.05 3.7 1.27.1 2.57-.7 3.29-1.77z"/></svg>,
     status: 'unbound', color: '#000000',
   },
-  {
-    id: 'douyin', platform: '抖音',
-    icon: <span className="text-[#FE2C55] font-bold text-sm">♪</span>,
-    status: 'bound', account: '創作者888', color: '#FE2C55',
-  },
+  { id: 'douyin', platform: '抖音', icon: <span className="text-[#FE2C55] font-bold text-sm">♪</span>, status: 'bound', account: '創作者888', color: '#FE2C55' },
 ]
 
+// ============ 設備圖標 ============
+function deviceIcon(type: string) {
+  switch (type) {
+    case 'phone': return <PhoneIcon className="w-4 h-4" />
+    case 'tablet': return <PhoneIcon className="w-4 h-4 rotate-90" />
+    default: return <Laptop className="w-4 h-4" />
+  }
+}
+
+// ============ 彈窗容器 ============
+function Modal({ children, onClose, maxWidth = 'max-w-lg' }: { children: ReactNode; onClose: () => void; maxWidth?: string }) {
+  return (
+    <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm" onClick={onClose}>
+      <div className={`bg-white rounded-2xl shadow-2xl w-full ${maxWidth} mx-4 overflow-hidden`} onClick={e => e.stopPropagation()}>
+        {children}
+      </div>
+    </div>
+  )
+}
+
+// ============ 加載態 ============
+function Spinner() {
+  return <Loader2 className="w-4 h-4 animate-spin" />
+}
+
+// ============ 主組件 ============
 export default function AccountPage() {
   const [activeTab, setActiveTab] = useState<TabKey>('profile')
 
   // Profile state
   const [bio, setBio] = useState('用AI創造價值，分享知識與靈感 ✨')
-  const [twoFactorEnabled, setTwoFactorEnabled] = useState(true)
+
+  // 兩步驗證狀態
+  const [twoFactor, setTwoFactor] = useState<TwoFactorStatus>({
+    enabled: false, method: 'app', backupCodesRemaining: 0, lastChanged: '',
+  })
+
+  // ===== 對話框狀態 =====
+  const [passwordDialog, setPasswordDialog] = useState(false)
+  const [twoFactorDialog, setTwoFactorDialog] = useState(false)
+  const [deviceDialog, setDeviceDialog] = useState(false)
+  const [loginHistoryDialog, setLoginHistoryDialog] = useState(false)
+  const [securityScoreDialog, setSecurityScoreDialog] = useState(false)
+
+  // ===== 密碼表單 =====
+  const [passwordForm, setPasswordForm] = useState({ current: '', newPwd: '', confirm: '' })
+  const [showPassword, setShowPassword] = useState<Record<string, boolean>>({})
+  const [passwordSubmitting, setPasswordSubmitting] = useState(false)
+  const [passwordError, setPasswordError] = useState('')
+
+  // ===== 數據載入 =====
+  const [devices, setDevices] = useState<Device[]>([])
+  const [devicesLoading, setDevicesLoading] = useState(false)
+  const [removingDeviceId, setRemovingDeviceId] = useState<number | null>(null)
+  const [loginHistory, setLoginHistory] = useState<LoginRecord[]>([])
+  const [historyLoading, setHistoryLoading] = useState(false)
+  const [historyPage, setHistoryPage] = useState(1)
+  const [historyTotal, setHistoryTotal] = useState(0)
+  const [securityScore, setSecurityScore] = useState<{ score: number; maxScore: number; checks: { name: string; passed: boolean; detail: string }[] } | null>(null)
+  const [scoreLoading, setScoreLoading] = useState(false)
+
+  // ===== API 調用 =====
+  const loadTwoFactor = useCallback(async () => {
+    try {
+      const res = await securityApi.getTwoFactorStatus()
+      if (res.code === 200) setTwoFactor(res.data)
+    } catch { /* 靜默處理 */ }
+  }, [])
+
+  const loadDevices = useCallback(async () => {
+    setDevicesLoading(true)
+    try {
+      const res = await securityApi.getDevices()
+      if (res.code === 200) setDevices(res.data)
+    } catch {
+      setDevices([])
+    } finally {
+      setDevicesLoading(false)
+    }
+  }, [])
+
+  const loadLoginHistory = useCallback(async (page = 1) => {
+    setHistoryLoading(true)
+    try {
+      const res = await securityApi.getLoginHistory(page)
+      if (res.code === 200) {
+        setLoginHistory(res.data.items)
+        setHistoryTotal(res.data.total)
+        setHistoryPage(page)
+      }
+    } catch {
+      setLoginHistory([])
+    } finally {
+      setHistoryLoading(false)
+    }
+  }, [])
+
+  const loadSecurityScore = useCallback(async () => {
+    setScoreLoading(true)
+    try {
+      const res = await securityApi.getSecurityScore()
+      if (res.code === 200) setSecurityScore(res.data)
+    } catch {
+      setSecurityScore(null)
+    } finally {
+      setScoreLoading(false)
+    }
+  }, [])
+
+  useEffect(() => {
+    loadTwoFactor()
+  }, [loadTwoFactor])
+
+  // 打開對話框時加載數據
+  useEffect(() => { if (deviceDialog) loadDevices() }, [deviceDialog, loadDevices])
+  useEffect(() => { if (loginHistoryDialog) loadLoginHistory(1) }, [loginHistoryDialog, loadLoginHistory])
+  useEffect(() => { if (securityScoreDialog) loadSecurityScore() }, [securityScoreDialog, loadSecurityScore])
+
+  // ===== 交互處理 =====
+  const toggleShowPassword = (field: string) => setShowPassword(prev => ({ ...prev, [field]: !prev[field] }))
+
+  const handlePasswordSubmit = async () => {
+    setPasswordError('')
+    if (!passwordForm.current || !passwordForm.newPwd || !passwordForm.confirm) {
+      setPasswordError('請填寫所有欄位')
+      return
+    }
+    if (passwordForm.newPwd.length < 8) {
+      setPasswordError('新密碼長度至少為 8 個字符')
+      return
+    }
+    if (passwordForm.newPwd !== passwordForm.confirm) {
+      setPasswordError('兩次輸入的新密碼不一致')
+      return
+    }
+    setPasswordSubmitting(true)
+    try {
+      const res = await securityApi.changePassword({
+        currentPassword: passwordForm.current,
+        newPassword: passwordForm.newPwd,
+        confirmPassword: passwordForm.confirm,
+      })
+      if (res.code === 200) {
+        setPasswordDialog(false)
+        setPasswordForm({ current: '', newPwd: '', confirm: '' })
+        alert(res.data.message || '密碼修改成功！')
+      } else {
+        setPasswordError(res.msg || '密碼修改失敗')
+      }
+    } catch (err) {
+      setPasswordError('網路錯誤，請稍後重試')
+    } finally {
+      setPasswordSubmitting(false)
+    }
+  }
+
+  const handleToggleTwoFactor = async () => {
+    if (twoFactor.enabled) {
+      setTwoFactorDialog(true)
+    } else {
+      setTwoFactorDialog(true)
+    }
+  }
+
+  const confirmToggleTwoFactor = async (enable: boolean) => {
+    try {
+      const res = await securityApi.toggleTwoFactor(enable)
+      if (res.code === 200) {
+        setTwoFactor(prev => ({ ...prev, enabled: enable, lastChanged: new Date().toISOString().slice(0, 10) }))
+        if (enable) alert('兩步驗證已開啟')
+        else alert('兩步驗證已關閉')
+      }
+    } catch {
+      alert('操作失敗，請稍後重試')
+    } finally {
+      setTwoFactorDialog(false)
+    }
+  }
+
+  const handleRemoveDevice = async (deviceId: number) => {
+    if (!confirm('確定要移除該設備嗎？移除後該設備將無法直接登錄。')) return
+    setRemovingDeviceId(deviceId)
+    try {
+      const res = await securityApi.removeDevice(deviceId)
+      if (res.code === 200) {
+        setDevices(prev => prev.filter(d => d.id !== deviceId))
+        alert('設備已移除')
+      }
+    } catch {
+      alert('移除失敗，請稍後重試')
+    } finally {
+      setRemovingDeviceId(null)
+    }
+  }
 
   return (
     <div className="p-6">
@@ -81,9 +263,7 @@ export default function AccountPage() {
           {TABS.map(tab => (
             <button key={tab.key} onClick={() => setActiveTab(tab.key)}
               className={'flex items-center gap-1.5 px-4 py-2.5 text-[13px] font-medium border-b-2 transition-all ' +
-                (activeTab === tab.key
-                  ? 'border-violet-500 text-violet-600'
-                  : 'border-transparent text-gray-500 hover:text-gray-700')}>
+                (activeTab === tab.key ? 'border-violet-500 text-violet-600' : 'border-transparent text-gray-500 hover:text-gray-700')}>
               <tab.icon className="w-4 h-4" />
               {tab.label}
             </button>
@@ -91,11 +271,8 @@ export default function AccountPage() {
         </div>
 
         {/* ===== Tab Content ===== */}
-
-        {/* --- 賬號信息（默認視圖） --- */}
         {(activeTab === 'profile' || activeTab === 'security' || activeTab === 'bind') && (
           <>
-            {/* 上排：個人資料 + 賬號安全 */}
             <div className="grid grid-cols-12 gap-5">
               {/* 左：個人資料 */}
               <div className="col-span-7 rounded-xl bg-white border border-gray-100 p-6 space-y-5">
@@ -105,10 +282,8 @@ export default function AccountPage() {
                 </div>
 
                 <div className="flex items-start gap-6">
-                  {/* 頭像 */}
                   <div className="relative group shrink-0">
                     <div className="w-28 h-28 rounded-full bg-gradient-to-br from-violet-200 to-cyan-100 flex items-center justify-center overflow-hidden border-2 border-white shadow-md">
-                      {/* 模擬頭像 */}
                       <div className="w-full h-full bg-cover bg-center"
                         style={{backgroundImage:`url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' width='112' height='112'%3E%3Crect fill='%23ddd6fe'/%3E%3Ccircle cx='56' cy='42' r='20' fill='%23a78bfa'/%3E%3Cellipse cx='56' cy='90' rx='30' ry='24' fill='%23a78bfa'/%3E%3C/svg%3E")`}}
                       />
@@ -118,7 +293,6 @@ export default function AccountPage() {
                     </button>
                   </div>
 
-                  {/* 信息字段 */}
                   <div className="flex-1 space-y-4 min-w-0">
                     <div className="flex items-center justify-between">
                       <div><span className="text-[12px] text-gray-400 mr-2">用戶名</span>
@@ -159,13 +333,26 @@ export default function AccountPage() {
 
               {/* 右：賬號安全 */}
               <div className="col-span-5 rounded-xl bg-white border border-gray-100 p-6 space-y-4">
-                <h3 className="text-[15px] font-bold text-gray-800">帳號安全</h3>
+                <div className="flex items-center justify-between">
+                  <h3 className="text-[15px] font-bold text-gray-800">帳號安全</h3>
+                  <button onClick={() => setSecurityScoreDialog(true)}
+                    className="text-[11.5px] text-violet-600 hover:text-violet-700 flex items-center gap-1">
+                    <Shield className="w-3.5 h-3.5" /> 安全評分
+                  </button>
+                </div>
 
+                {/* 安全項列表 - 全部真實可操作 */}
                 {[
-                  { icon: Lock, title: '登錄密碼', desc: '建議定期更換密碼，保障帳號安全', action: '修改密碼' },
-                  { icon: Shield, title: '兩步驗證', desc: '開啟後，登錄時需要額外驗證驗證碒', action: '', toggle: true },
-                  { icon: Monitor, title: '登錄設備管理', desc: '管理您當前帳號的登錄設備', action: '查看設備' },
-                  { icon: Clock, title: '最近登錄記錄', desc: '查看帳號最近的登錄活動', action: '查看記錄' },
+                  { icon: Lock, title: '登錄密碼', desc: '建議定期更換密碼，保障帳號安全', action: '修改密碼', onClick: () => setPasswordDialog(true) },
+                  {
+                    icon: Shield, title: '兩步驗證',
+                    desc: twoFactor.enabled ? `已開啟（${twoFactor.method === 'app' ? '驗證器App' : twoFactor.method === 'sms' ? '短信' : '郵件'}）` : '開啟後，登錄時需要額外驗證驗證碼',
+                    action: '', toggle: true,
+                    toggleState: twoFactor.enabled,
+                    onToggle: handleToggleTwoFactor,
+                  },
+                  { icon: Monitor, title: '登錄設備管理', desc: '管理您當前帳號的登錄設備', action: '查看設備', onClick: () => setDeviceDialog(true) },
+                  { icon: Clock, title: '最近登錄記錄', desc: '查看帳號最近的登錄活動', action: '查看記錄', onClick: () => setLoginHistoryDialog(true) },
                 ].map((item,i) => {
                   const Icon = item.icon
                   return (
@@ -179,12 +366,13 @@ export default function AccountPage() {
                       </div>
                       <div className="shrink-0 ml-2">
                         {item.toggle ? (
-                          <button onClick={() => setTwoFactorEnabled(!twoFactorEnabled)}
-                            className={`w-10 h-5.5 rounded-full transition-colors relative ${twoFactorEnabled?'bg-violet-500':'bg-gray-300'}`}>
-                            <div className={`w-4.5 h-4.5 rounded-full bg-white absolute top-[2px] transition-all shadow ${twoFactorEnabled?'left-[22px]':'left-[2px]'}`}/>
+                          <button onClick={item.onToggle}
+                            className={`w-10 h-5.5 rounded-full transition-colors relative ${'toggleState' in item && (item as any).toggleState ?'bg-violet-500':'bg-gray-300'}`}>
+                            <div className={`w-4.5 h-4.5 rounded-full bg-white absolute top-[2px] transition-all shadow ${'toggleState' in item && (item as any).toggleState ?'left-[22px]':'left-[2px]'}`}/>
                           </button>
                         ) : item.action ? (
-                          <button className="text-[12px] text-violet-600 border border-violet-200 rounded-lg px-3 py-1.5 hover:bg-violet-50 whitespace-nowrap">
+                          <button onClick={item.onClick}
+                            className="text-[12px] text-violet-600 border border-violet-200 rounded-lg px-3 py-1.5 hover:bg-violet-50 whitespace-nowrap">
                             {item.action}
                           </button>
                         ) : null}
@@ -192,12 +380,23 @@ export default function AccountPage() {
                     </div>
                   )
                 })}
+
+                {/* 安全評分條 */}
+                <div className="mt-2 p-3 rounded-xl bg-gradient-to-r from-green-50 to-emerald-50 border border-green-100">
+                  <div className="flex items-center justify-between mb-1.5">
+                    <span className="text-[12px] font-medium text-green-700">安全評分</span>
+                    <span className="text-sm font-bold text-green-600">{securityScore ? securityScore.score : '—'}/100</span>
+                  </div>
+                  <div className="h-1.5 rounded-full bg-green-100 overflow-hidden">
+                    <div className="h-full rounded-full bg-gradient-to-r from-green-400 to-emerald-500 transition-all"
+                      style={{ width: `${securityScore ? securityScore.score : 0}%` }} />
+                  </div>
+                </div>
               </div>
             </div>
 
             {/* 下排：賬號統計 + 套餐資源使用 */}
             <div className="grid grid-cols-12 gap-5">
-              {/* 賬號統計 */}
               <div className="col-span-7 rounded-xl bg-white border border-gray-100 p-6 space-y-4">
                 <h3 className="text-[15px] font-bold text-gray-800">帳號統計</h3>
                 <div className="grid grid-cols-4 gap-3">
@@ -224,14 +423,12 @@ export default function AccountPage() {
                 </div>
               </div>
 
-              {/* 套餐與資源使用 */}
               <div className="col-span-5 rounded-xl bg-white border border-gray-100 p-6 space-y-4">
                 <div className="flex items-center justify-between">
                   <h3 className="text-[15px] font-bold text-gray-800">套餐與資源使用</h3>
                   <button className="text-[12px] text-violet-600 hover:text-violet-700 font-medium flex items-center gap-0.5">查看詳情 <ArrowRight className="w-3.5 h-3.5"/></button>
                 </div>
 
-                {/* 會員卡片 */}
                 <div className="rounded-xl bg-gradient-to-r from-amber-50 to-orange-50 border border-amber-200 p-4 flex items-center gap-3">
                   <div className="w-10 h-10 rounded-lg bg-amber-100 flex items-center justify-center shrink-0">
                     <Crown className="w-5 h-5 text-amber-500"/>
@@ -243,7 +440,6 @@ export default function AccountPage() {
                   <button className="text-[12px] font-medium text-white bg-violet-600 rounded-lg px-4 py-1.5 hover:bg-violet-700">續費升級</button>
                 </div>
 
-                {/* 額度進度條 */}
                 <div className="space-y-3">
                 {[
                   { label: '視頻生成額度', pct: 57 },
@@ -263,8 +459,7 @@ export default function AccountPage() {
                         )}
                       </div>
                       <div className="h-2 rounded-full bg-gray-100 overflow-hidden">
-                        <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all"
-                          style={{width:`${displayPct}%`}} />
+                        <div className="h-full rounded-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all" style={{width:`${displayPct}%`}} />
                       </div>
                     </div>
                   )
@@ -280,22 +475,17 @@ export default function AccountPage() {
                 {BIND_ACCOUNTS.map(acc => (
                   <div key={acc.id} className={
                     'border-2 rounded-xl p-4 text-center transition-all ' +
-                    (acc.status === 'bound'
-                      ? 'border-green-200 bg-green-50/30 hover:border-green-300'
-                      : 'border-gray-100 bg-gray-50/50 hover:border-gray-200')
+                    (acc.status === 'bound' ? 'border-green-200 bg-green-50/30 hover:border-green-300' : 'border-gray-100 bg-gray-50/50 hover:border-gray-200')
                   }>
                     <div className="flex justify-center mb-2">{acc.icon}</div>
                     <div className="text-[13px] font-semibold text-gray-800">{acc.platform}</div>
-                    <div className={
-                      'text-[11.5px] mt-1 ' + (acc.status === 'bound' ? 'text-green-600' : 'text-gray-400')
-                    }>{acc.status === 'bound' ? '已綁定' : '未綁定'}</div>
+                    <div className={'text-[11.5px] mt-1 ' + (acc.status === 'bound' ? 'text-green-600' : 'text-gray-400')}>{acc.status === 'bound' ? '已綁定' : '未綁定'}</div>
                     {acc.account && <div className="text-[11px] text-gray-500 truncate mt-0.5">{acc.account}</div>}
                     {acc.status === 'unbound' ? (
                       <button className="mt-2 text-[11.5px] text-violet-600 border border-violet-200 rounded-lg px-3 py-1 hover:bg-violet-50">綁定</button>
                     ) : null}
                   </div>
                 ))}
-                {/* 綁定更多 */}
                 <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center flex flex-col items-center justify-center hover:border-violet-300 cursor-pointer transition-all">
                   <Plus className="w-6 h-6 text-gray-300 mb-1"/>
                   <div className="text-[12.5px] text-violet-600 font-medium">綁定更多</div>
@@ -305,7 +495,7 @@ export default function AccountPage() {
           </>
         )}
 
-        {/* --- 我的偏好（獨立 tab） --- */}
+        {/* --- 我的偏好 --- */}
         {activeTab === 'prefs' && (
           <div className="rounded-xl bg-white border border-gray-100 p-6 space-y-5">
             <h3 className="text-[15px] font-bold text-gray-800">我的偏好</h3>
@@ -329,7 +519,7 @@ export default function AccountPage() {
           </div>
         )}
 
-        {/* --- 通知設置（獨立 tab） --- */}
+        {/* --- 通知設置 --- */}
         {activeTab === 'notify' && (
           <div className="rounded-xl bg-white border border-gray-100 p-6 space-y-5 max-w-[720px]">
             <h3 className="text-[15px] font-bold text-gray-800">通知設置</h3>
@@ -368,6 +558,340 @@ export default function AccountPage() {
           </div>
         )}
       </div>
+
+      {/* ============================================ */}
+      {/* ===== 彈窗：修改密碼 ===== */}
+      {/* ============================================ */}
+      {passwordDialog && (
+        <Modal onClose={() => { setPasswordDialog(false); setPasswordError(''); setPasswordForm({ current: '', newPwd: '', confirm: '' }) }}>
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">修改登錄密碼</h3>
+              <button onClick={() => { setPasswordDialog(false); setPasswordError(''); setPasswordForm({ current: '', newPwd: '', confirm: '' }) }}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
+            <div className="rounded-xl bg-amber-50 border border-amber-200 p-3 flex items-start gap-2.5">
+              <AlertTriangle className="w-4.5 h-4.5 text-amber-500 shrink-0 mt-0.5" />
+              <div className="text-[12px] text-amber-700">為保障帳號安全，請使用 8 位以上包含字母、數字和特殊字符的密碼</div>
+            </div>
+
+            <div>
+              <label className="text-[12.5px] font-medium text-gray-600 mb-1.5 block">當前密碼</label>
+              <div className="relative">
+                <input type={showPassword['current'] ? 'text' : 'password'} value={passwordForm.current}
+                  onChange={e => setPasswordForm(p => ({ ...p, current: e.target.value }))} placeholder="請輸入當前密碼"
+                  className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-200 rounded-lg outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all" />
+                <button onClick={() => toggleShowPassword('current')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  {showPassword['current'] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[12.5px] font-medium text-gray-600 mb-1.5 block">新密碼</label>
+              <div className="relative">
+                <input type={showPassword['newPwd'] ? 'text' : 'password'} value={passwordForm.newPwd}
+                  onChange={e => setPasswordForm(p => ({ ...p, newPwd: e.target.value }))} placeholder="請輸入新密碼（至少 8 位）"
+                  className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-200 rounded-lg outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all" />
+                <button onClick={() => toggleShowPassword('newPwd')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  {showPassword['newPwd'] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            <div>
+              <label className="text-[12.5px] font-medium text-gray-600 mb-1.5 block">確認新密碼</label>
+              <div className="relative">
+                <input type={showPassword['confirm'] ? 'text' : 'password'} value={passwordForm.confirm}
+                  onChange={e => setPasswordForm(p => ({ ...p, confirm: e.target.value }))} placeholder="請再次輸入新密碼"
+                  className="w-full px-3 py-2.5 pr-10 text-sm border border-gray-200 rounded-lg outline-none focus:border-violet-400 focus:ring-2 focus:ring-violet-100 transition-all" />
+                <button onClick={() => toggleShowPassword('confirm')} className="absolute right-3 top-1/2 -translate-y-1/2 text-gray-400 hover:text-gray-600">
+                  {showPassword['confirm'] ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
+                </button>
+              </div>
+            </div>
+
+            {passwordError && (
+              <div className="text-[12.5px] text-red-500 bg-red-50 border border-red-200 rounded-lg px-3 py-2">{passwordError}</div>
+            )}
+          </div>
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+            <button onClick={() => { setPasswordDialog(false); setPasswordError(''); setPasswordForm({ current: '', newPwd: '', confirm: '' }) }}
+              className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">取消</button>
+            <button onClick={handlePasswordSubmit} disabled={passwordSubmitting}
+              className="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg hover:shadow-lg transition-all disabled:opacity-60 flex items-center gap-1.5">
+              {passwordSubmitting && <Spinner />}
+              {passwordSubmitting ? '提交中...' : '確認修改'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ============================================ */}
+      {/* ===== 彈窗：兩步驗證設置 ===== */}
+      {/* ============================================ */}
+      {twoFactorDialog && (
+        <Modal onClose={() => setTwoFactorDialog(false)}>
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center gap-3">
+              <div className={`w-10 h-10 rounded-full flex items-center justify-center ${twoFactor.enabled ? 'bg-green-50' : 'bg-violet-50'}`}>
+                {twoFactor.enabled ? <Check className="w-5 h-5 text-green-500" /> : <Shield className="w-5 h-5 text-violet-500" />}
+              </div>
+              <h3 className="text-base font-bold text-gray-900">{twoFactor.enabled ? '關閉兩步驗證' : '開啟兩步驗證'}</h3>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
+            {!twoFactor.enabled && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-blue-50 border border-blue-200">
+                <Fingerprint className="w-4.5 h-4.5 text-blue-500 shrink-0 mt-0.5" />
+                <p className="text-[12.5px] text-blue-700">
+                  兩步驗證將為您的帳號增加一層保護。開啟後，除了密碼外，登錄時還需要輸入驗證器App生成的動態驗證碼。
+                </p>
+              </div>
+            )}
+            {twoFactor.enabled && (
+              <div className="flex items-start gap-2.5 p-3 rounded-xl bg-red-50 border border-red-200">
+                <AlertTriangle className="w-4.5 h-4.5 text-red-500 shrink-0 mt-0.5" />
+                <p className="text-[12.5px] text-red-700">關閉兩步驗證後，登錄時將不再需要額外驗證。這可能會降低您的帳號安全性。</p>
+              </div>
+            )}
+
+            <div className="space-y-2">
+              <div className="text-[12.5px] font-semibold text-gray-600">驗證方式</div>
+              {[
+                { key: 'app', label: '驗證器 App (Google Authenticator / Authy)', icon: <KeyRound className="w-4 h-4" /> },
+                { key: 'sms', label: '短信驗證碼', icon: <PhoneIcon className="w-4 h-4" /> },
+                { key: 'email', label: '郵件驗證碼', icon: <Globe className="w-4 h-4" /> },
+              ].map(opt => (
+                <button key={opt.key} disabled={twoFactor.enabled}
+                  onClick={() => setTwoFactor(prev => ({ ...prev, method: opt.key as any }))}
+                  className={`w-full flex items-center gap-2.5 p-3 rounded-xl border text-left transition-all ${twoFactor.method === opt.key ? 'border-violet-300 bg-violet-50' : 'border-gray-200 hover:border-gray-300'} disabled:opacity-60`}>
+                  <div className="w-8 h-8 rounded-lg bg-gray-100 flex items-center justify-center text-gray-500">{opt.icon}</div>
+                  <span className="text-[13px] text-gray-700">{opt.label}</span>
+                </button>
+              ))}
+            </div>
+
+            {twoFactor.enabled && (
+              <div className="flex items-center justify-between p-3 rounded-xl bg-gray-50 border border-gray-100">
+                <span className="text-[12.5px] text-gray-600">備用驗證碼剩餘</span>
+                <span className="text-[13px] font-semibold text-gray-800">{twoFactor.backupCodesRemaining} 個</span>
+              </div>
+            )}
+          </div>
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-end gap-3">
+            <button onClick={() => setTwoFactorDialog(false)}
+              className="px-4 py-2 text-sm text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 transition-all">取消</button>
+            <button onClick={() => confirmToggleTwoFactor(!twoFactor.enabled)}
+              className={`px-5 py-2 text-sm font-medium text-white rounded-lg transition-all ${twoFactor.enabled ? 'bg-red-500 hover:bg-red-600' : 'bg-gradient-to-r from-violet-500 to-purple-600 hover:shadow-lg'}`}>
+              {twoFactor.enabled ? '確定關閉' : '確認開啟'}
+            </button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ============================================ */}
+      {/* ===== 彈窗：登錄設備管理 ===== */}
+      {/* ============================================ */}
+      {deviceDialog && (
+        <Modal onClose={() => setDeviceDialog(false)}>
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">登錄設備管理</h3>
+                <p className="text-xs text-gray-500 mt-0.5">共 {devices.length} 台設備 · 可遠端移除可疑設備</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={loadDevices} disabled={devicesLoading}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50">
+                  <RefreshCw className={`w-4 h-4 ${devicesLoading ? 'animate-spin' : ''}`} />
+                </button>
+                <button onClick={() => setDeviceDialog(false)}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="p-6 space-y-3 max-h-96 overflow-y-auto">
+            {devicesLoading ? (
+              <div className="flex items-center justify-center py-10 text-gray-400">
+                <Spinner /> <span className="ml-2 text-sm">載入中...</span>
+              </div>
+            ) : devices.length === 0 ? (
+              <div className="text-center py-10 text-gray-400 text-sm">暫無設備數據</div>
+            ) : (
+              devices.map(dev => (
+                <div key={dev.id} className={`flex items-start gap-3 p-3.5 rounded-xl border transition-all ${dev.current ? 'border-violet-200 bg-violet-50/30' : 'border-gray-100 hover:border-gray-200'}`}>
+                  <div className={`w-10 h-10 rounded-lg flex items-center justify-center shrink-0 ${dev.current ? 'bg-violet-100' : 'bg-gray-100'}`}>
+                    {dev.current ? <Laptop className="w-5 h-5 text-violet-500" /> : deviceIcon(dev.type)}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13.5px] font-medium text-gray-800">{dev.device}</span>
+                      {dev.current && <span className="text-[10px] bg-violet-100 text-violet-600 px-1.5 py-0.5 rounded-full font-medium">當前設備</span>}
+                    </div>
+                    <div className="text-[11.5px] text-gray-400 mt-1">{dev.os} · {dev.browser}</div>
+                    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-gray-400 flex-wrap">
+                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" />{dev.ip}</span>
+                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{dev.location}</span>
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatRelativeTime(dev.lastActive)}</span>
+                    </div>
+                  </div>
+                  {!dev.current && (
+                    <button onClick={() => handleRemoveDevice(dev.id)} disabled={removingDeviceId === dev.id}
+                      className="text-[11px] text-red-500 hover:text-red-600 hover:bg-red-50 px-2.5 py-1 rounded-lg transition-all shrink-0 font-medium disabled:opacity-50 flex items-center gap-1">
+                      {removingDeviceId === dev.id ? <Spinner /> : null}移除
+                    </button>
+                  )}
+                </div>
+              ))
+            )}
+          </div>
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-between items-center">
+            <span className="text-[11.5px] text-gray-400">移除設備後，該設備下次登錄需重新驗證</span>
+            <button onClick={() => setDeviceDialog(false)}
+              className="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg hover:shadow-lg transition-all">關閉</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ============================================ */}
+      {/* ===== 彈窗：最近登錄記錄 ===== */}
+      {/* ============================================ */}
+      {loginHistoryDialog && (
+        <Modal onClose={() => setLoginHistoryDialog(false)}>
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <div>
+                <h3 className="text-base font-bold text-gray-900">最近登錄記錄</h3>
+                <p className="text-xs text-gray-500 mt-0.5">共 {historyTotal} 條記錄 · 如發現異常請立即修改密碼</p>
+              </div>
+              <div className="flex items-center gap-2">
+                <button onClick={() => loadLoginHistory(historyPage)} disabled={historyLoading}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all disabled:opacity-50">
+                  <RefreshCw className={`w-4 h-4 ${historyLoading ? 'animate-spin' : ''}`} />
+                </button>
+                <button onClick={() => setLoginHistoryDialog(false)}
+                  className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
+                  <X className="w-5 h-5" />
+                </button>
+              </div>
+            </div>
+          </div>
+          <div className="p-6 space-y-2.5 max-h-96 overflow-y-auto">
+            {historyLoading ? (
+              <div className="flex items-center justify-center py-10 text-gray-400">
+                <Spinner /> <span className="ml-2 text-sm">載入中...</span>
+              </div>
+            ) : loginHistory.length === 0 ? (
+              <div className="text-center py-10 text-gray-400 text-sm">暫無登錄記錄</div>
+            ) : (
+              loginHistory.map(log => (
+                <div key={log.id} className="flex items-start gap-3 p-3 rounded-xl border border-gray-100 hover:border-gray-200 transition-all">
+                  <div className={`w-9 h-9 rounded-full flex items-center justify-center shrink-0 ${log.status === 'blocked' ? 'bg-red-50' : 'bg-green-50'}`}>
+                    {log.status === 'blocked' ? <X className="w-4 h-4 text-red-500" /> : <Check className="w-4 h-4 text-green-500" />}
+                  </div>
+                  <div className="flex-1 min-w-0">
+                    <div className="flex items-center gap-2">
+                      <span className="text-[13px] font-medium text-gray-800">{log.action}</span>
+                      <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ${log.status === 'blocked' ? 'bg-red-50 text-red-600' : 'bg-green-50 text-green-600'}`}>
+                        {log.status === 'blocked' ? '已攔截' : '成功'}
+                      </span>
+                    </div>
+                    <div className="flex items-center gap-3 mt-1.5 text-[11px] text-gray-400 flex-wrap">
+                      <span className="flex items-center gap-1"><Globe className="w-3 h-3" />{log.ip}</span>
+                      <span className="flex items-center gap-1"><MapPin className="w-3 h-3" />{log.location}</span>
+                      <span className="flex items-center gap-1"><Monitor className="w-3 h-3" />{log.device}</span>
+                      <span className="flex items-center gap-1"><Clock className="w-3 h-3" />{formatDateTime(log.time)}</span>
+                    </div>
+                  </div>
+                </div>
+              ))
+            )}
+          </div>
+          {/* 分頁 */}
+          {historyTotal > 10 && (
+            <div className="px-6 py-4 border-t border-gray-100 flex items-center justify-between">
+              <span className="text-[11.5px] text-gray-400">第 {historyPage} 頁</span>
+              <div className="flex items-center gap-2">
+                <button onClick={() => loadLoginHistory(Math.max(1, historyPage - 1))} disabled={historyPage === 1 || historyLoading}
+                  className="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50 disabled:opacity-40">上一頁</button>
+                <button onClick={() => loadLoginHistory(historyPage + 1)} disabled={historyLoading}
+                  className="px-3 py-1.5 text-xs text-gray-600 border border-gray-200 rounded-lg hover:bg-gray-50">下一頁</button>
+              </div>
+            </div>
+          )}
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+            <button onClick={() => setLoginHistoryDialog(false)}
+              className="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg hover:shadow-lg transition-all">關閉</button>
+          </div>
+        </Modal>
+      )}
+
+      {/* ============================================ */}
+      {/* ===== 彈窗：安全評分詳情 ===== */}
+      {/* ============================================ */}
+      {securityScoreDialog && (
+        <Modal onClose={() => setSecurityScoreDialog(false)}>
+          <div className="px-6 py-5 border-b border-gray-100">
+            <div className="flex items-center justify-between">
+              <h3 className="text-base font-bold text-gray-900">安全評分詳情</h3>
+              <button onClick={() => setSecurityScoreDialog(false)}
+                className="p-1.5 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-lg transition-all">
+                <X className="w-5 h-5" />
+              </button>
+            </div>
+          </div>
+          <div className="p-6 space-y-4">
+            {/* 大評分圈 */}
+            <div className="flex items-center justify-center py-2">
+              <div className="relative w-32 h-32">
+                <svg className="w-32 h-32 -rotate-90" viewBox="0 0 120 120">
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#f3f4f6" strokeWidth="10" />
+                  <circle cx="60" cy="60" r="52" fill="none" stroke="#10b981" strokeWidth="10"
+                    strokeLinecap="round" strokeDasharray={`${(securityScore ? securityScore.score : 0) / 100 * 326.7} 326.7`} />
+                </svg>
+                <div className="absolute inset-0 flex flex-col items-center justify-center">
+                  <span className="text-2xl font-bold text-gray-900">{securityScore?.score ?? '—'}</span>
+                  <span className="text-[11px] text-gray-400">/ 100</span>
+                </div>
+              </div>
+            </div>
+
+            {/* 檢查項目 */}
+            <div className="space-y-2">
+              {securityScore?.checks.map((c, i) => (
+                <div key={i} className="flex items-center gap-3 p-3 rounded-xl border border-gray-100">
+                  <div className={`w-7 h-7 rounded-full flex items-center justify-center ${c.passed ? 'bg-green-50' : 'bg-amber-50'}`}>
+                    {c.passed ? <Check className="w-4 h-4 text-green-500" /> : <AlertTriangle className="w-4 h-4 text-amber-500" />}
+                  </div>
+                  <div className="flex-1">
+                    <div className="text-[13px] font-medium text-gray-800">{c.name}</div>
+                    <div className="text-[11.5px] text-gray-400">{c.detail}</div>
+                  </div>
+                  <span className={`text-[11px] font-medium ${c.passed ? 'text-green-600' : 'text-amber-600'}`}>
+                    {c.passed ? '通過' : '建議'}
+                  </span>
+                </div>
+              ))}
+              {scoreLoading && (
+                <div className="flex items-center justify-center py-6 text-gray-400">
+                  <Spinner /> <span className="ml-2 text-sm">載入中...</span>
+                </div>
+              )}
+            </div>
+          </div>
+          <div className="px-6 py-4 border-t border-gray-100 flex justify-end">
+            <button onClick={() => setSecurityScoreDialog(false)}
+              className="px-5 py-2 text-sm font-medium text-white bg-gradient-to-r from-violet-500 to-purple-600 rounded-lg hover:shadow-lg transition-all">關閉</button>
+          </div>
+        </Modal>
+      )}
     </div>
   )
 }

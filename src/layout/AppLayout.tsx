@@ -1,8 +1,19 @@
-import { NavLink, Outlet } from 'react-router-dom'
-import { Sparkles, Crown, HelpCircle, Bell, Gift, ChevronDown } from 'lucide-react'
+import { useState } from 'react'
+import { NavLink, Outlet, useNavigate } from 'react-router-dom'
+import { Sparkles, Crown, HelpCircle, Bell, Gift, ChevronDown, LogOut, User as UserIcon } from 'lucide-react'
 import { navSections } from '../lib/nav'
+import { clearToken } from '../lib/auth'
 
 export default function AppLayout() {
+  const navigate = useNavigate()
+  const [menuOpen, setMenuOpen] = useState(false)
+
+  const handleLogout = () => {
+    setMenuOpen(false)
+    clearToken()
+    navigate('/login', { replace: true })
+  }
+
   return (
     <div className="flex h-screen bg-gray-50/80 overflow-hidden">
       {/* 左側側邊欄 */}
@@ -91,15 +102,47 @@ export default function AppLayout() {
               <Bell className="w-5 h-5" />
               <span className="absolute top-1.5 right-1.5 w-2 h-2 bg-red-500 rounded-full border-2 border-white" />
             </button>
-            <div className="flex items-center gap-2.5 pl-3 border-l border-gray-100">
-              <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
-                創
-              </div>
-              <div className="hidden sm:block">
-                <div className="text-sm font-medium text-gray-900 leading-tight">創作者888</div>
-                <div className="text-[10px] text-amber-600 font-medium leading-tight">尊享會員</div>
-              </div>
-              <ChevronDown className="w-4 h-4 text-gray-400" />
+            <div className="relative flex items-center gap-2.5 pl-3 border-l border-gray-100">
+              <button
+                type="button"
+                onClick={() => setMenuOpen(v => !v)}
+                className="flex items-center gap-2.5 rounded-lg py-1 pr-1 hover:bg-gray-50 transition-all"
+              >
+                <div className="w-8 h-8 rounded-full bg-gradient-to-br from-violet-400 to-purple-500 flex items-center justify-center text-white text-xs font-bold">
+                  創
+                </div>
+                <div className="hidden sm:block text-left">
+                  <div className="text-sm font-medium text-gray-900 leading-tight">創作者888</div>
+                  <div className="text-[10px] text-amber-600 font-medium leading-tight">尊享會員</div>
+                </div>
+                <ChevronDown className="w-4 h-4 text-gray-400" />
+              </button>
+
+              {menuOpen && (
+                <div className="contents">
+                  {/* 點擊空白區關閉選單 */}
+                  <div className="fixed inset-0 z-10" onClick={() => setMenuOpen(false)} />
+                  <div className="absolute right-0 top-12 w-44 bg-white rounded-xl shadow-lg border border-gray-100 py-1.5 z-20">
+                    <button
+                      type="button"
+                      onClick={() => { setMenuOpen(false); navigate('/account') }}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-gray-700 hover:bg-gray-50 transition-all"
+                    >
+                      <UserIcon className="w-4 h-4 text-gray-400" />
+                      帳號管理
+                    </button>
+                    <div className="my-1 border-t border-gray-100" />
+                    <button
+                      type="button"
+                      onClick={handleLogout}
+                      className="w-full flex items-center gap-2.5 px-3.5 py-2 text-sm text-red-600 hover:bg-red-50 transition-all"
+                    >
+                      <LogOut className="w-4 h-4" />
+                      退出登錄
+                    </button>
+                  </div>
+                </div>
+              )}
             </div>
           </div>
         </header>

@@ -1,6 +1,6 @@
 import {
   Home, Lightbulb, FileText, Mic, MonitorPlay, GraduationCap, Eye, Bot,
-  Send, BarChart3, User, Award, LayoutGrid, FolderPlus, Receipt,
+  Send, Image, FileBox, Clock, History, User, Receipt, Award, LayoutGrid, FolderPlus,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -36,16 +36,19 @@ export const navSections: NavSection[] = [
     ],
   },
   {
-    header: '發布與運營',
+    header: '發布與營運',
     items: [
+      { label: '素材管理', path: '/material-management', icon: FileBox },
       { label: '一鍵發布', path: '/publish', icon: Send },
-      { label: '數據分析', path: '/analytics', icon: BarChart3 },
+      { label: '圖集發布', path: '/image-publish', icon: Image },
+      { label: '草稿箱', path: '/draft-box', icon: Clock },
+      { label: '發布歷史', path: '/publish-history', icon: History },
     ],
   },
   {
-    header: '帳號與賬單',
+    header: '賬號與費用',
     items: [
-      { label: '帳號管理', path: '/account', icon: User },
+      { label: '賬號管理', path: '/account', icon: User },
       { label: '訂單計費', path: '/billing', icon: Receipt },
     ],
   },

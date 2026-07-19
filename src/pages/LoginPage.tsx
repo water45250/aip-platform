@@ -1,20 +1,41 @@
 import { useState } from 'react'
-import { useNavigate } from 'react-router-dom'
+import { useNavigate, useLocation } from 'react-router-dom'
 import {
-  Sparkles, Zap, Shield, Globe, ChevronRight, Eye, EyeOff, Mail, Lock, User, ArrowRight
+  Sparkles, Zap, Shield, Globe, ChevronRight, Eye, EyeOff, Mail, Lock, User, ArrowRight, AlertCircle
 } from 'lucide-react'
+import { setToken, generateMockToken } from '../lib/auth'
 
 export default function LoginPage() {
   const navigate = useNavigate()
+  const location = useLocation()
+  // 登錄成功後跳轉到來源頁；首次訪問則回到首頁
+  const from = (location.state as { from?: string } | null)?.from || '/dashboard'
+
   const [isRegister, setIsRegister] = useState(false)
   const [showPassword, setShowPassword] = useState(false)
   const [showConfirm, setShowConfirm] = useState(false)
   const [form, setForm] = useState({ name: '', email: '', password: '', confirm: '' })
   const [agreed, setAgreed] = useState(false)
+  const [error, setError] = useState('')
 
   const handleSubmit = (e: React.FormEvent) => {
     e.preventDefault()
-    navigate('/dashboard')
+    setError('')
+
+    // 表單校驗
+    if (!form.email.trim()) return setError('請輸入郵箱')
+    if (!/^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(form.email)) return setError('郵箱格式不正確')
+    if (!form.password) return setError('請輸入密碼')
+    if (form.password.length < 6) return setError('密碼長度至少 6 位')
+    if (isRegister) {
+      if (!form.name.trim()) return setError('請輸入用戶名')
+      if (form.password !== form.confirm) return setError('兩次輸入的密碼不一致')
+      if (!agreed) return setError('請先閱讀並同意服務協議')
+    }
+
+    // 寫入登錄態（mock token；後端接入後替換為真實返回值）
+    setToken(generateMockToken(form.email.trim()))
+    navigate(from, { replace: true })
   }
 
   const update = (k: string, v: string) => setForm(prev => ({ ...prev, [k]: v }))
@@ -100,6 +121,12 @@ export default function LoginPage() {
           </div>
 
           <form onSubmit={handleSubmit} className="space-y-5">
+            {error && (
+              <div className="flex items-center gap-2 px-3 py-2.5 bg-red-50 border border-red-200 rounded-lg text-sm text-red-600">
+                <AlertCircle className="w-4 h-4 flex-shrink-0" />
+                <span>{error}</span>
+              </div>
+            )}
             {isRegister && (
               <div className="space-y-2">
                 <label className="text-sm font-medium text-gray-700">用戶名</label>

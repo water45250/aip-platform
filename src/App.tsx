@@ -1,6 +1,8 @@
-import { Routes, Route, Navigate } from 'react-router-dom'
+import { Routes, Route, Navigate, useLocation } from 'react-router-dom'
+import type { ReactElement } from 'react'
 import AppLayout from './layout/AppLayout'
 import LoginPage from './pages/LoginPage'
+import { isAuthenticated } from './lib/auth'
 import DashboardPage from './pages/DashboardPage'
 import TopicMiningPage from './pages/TopicMiningPage'
 import ScriptCreationPage from './pages/ScriptCreationPage'
@@ -10,16 +12,42 @@ import DigitalHumanPage from './pages/DigitalHumanPage'
 import CourseWorkshopPage from './pages/CourseWorkshopPage'
 import FinalPreviewPage from './pages/FinalPreviewPage'
 import PublishPage from './pages/PublishPage'
-import AnalyticsPage from './pages/AnalyticsPage'
+import MaterialManagementPage from './pages/MaterialManagementPage'
+import ImagePublishPage from './pages/ImagePublishPage'
+import DraftBoxPage from './pages/DraftBoxPage'
+import PublishHistoryPage from './pages/PublishHistoryPage'
 import AccountPage from './pages/AccountPage'
 import BillingPage from './pages/BillingPage'
 import PlaceholderPage from './pages/PlaceholderPage'
 
+// 路由守衛：未登錄訪問受保護頁面時，重定向到登錄頁並記錄來源
+function RequireAuth({ children }: { children: ReactElement }) {
+  const location = useLocation()
+  if (!isAuthenticated()) {
+    return <Navigate to="/login" replace state={{ from: location.pathname }} />
+  }
+  return children
+}
+
 function App() {
   return (
     <Routes>
-      <Route path="/login" element={<LoginPage />} />
-      <Route path="/" element={<AppLayout />}>
+      {/* 已登錄用戶訪問登錄頁時，直接跳轉到首頁 */}
+      <Route
+        path="/login"
+        element={
+          isAuthenticated() ? <Navigate to="/dashboard" replace /> : <LoginPage />
+        }
+      />
+      {/* 受保護的應用主體：每次訪問都需先經過登錄驗證 */}
+      <Route
+        path="/"
+        element={
+          <RequireAuth>
+            <AppLayout />
+          </RequireAuth>
+        }
+      >
         <Route index element={<Navigate to="/dashboard" replace />} />
         <Route path="dashboard" element={<DashboardPage />} />
         <Route path="topic-mining" element={<TopicMiningPage />} />
@@ -29,10 +57,16 @@ function App() {
         <Route path="digital-human" element={<DigitalHumanPage />} />
         <Route path="course-workshop" element={<CourseWorkshopPage />} />
         <Route path="final-preview" element={<FinalPreviewPage />} />
+        {/* 發布與營運 */}
+        <Route path="material-management" element={<MaterialManagementPage />} />
         <Route path="publish" element={<PublishPage />} />
-        <Route path="analytics" element={<AnalyticsPage />} />
+        <Route path="image-publish" element={<ImagePublishPage />} />
+        <Route path="draft-box" element={<DraftBoxPage />} />
+        <Route path="publish-history" element={<PublishHistoryPage />} />
+        {/* 賬號與費用 */}
         <Route path="account" element={<AccountPage />} />
         <Route path="billing" element={<BillingPage />} />
+        {/* 增值服務 */}
         <Route path="mentor" element={<PlaceholderPage title="導師審核" />} />
         <Route path="templates" element={<PlaceholderPage title="模板中心" />} />
         <Route path="assets" element={<PlaceholderPage title="素材中心" />} />
