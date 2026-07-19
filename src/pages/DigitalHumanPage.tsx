@@ -42,7 +42,7 @@ const FALLBACK_VOICES: Voice[] = [
 const OUTFITS = ['outfit-1', 'outfit-2', 'outfit-3', 'outfit-4', 'outfit-5']
 // 背景選項（含自定義）
 const BACKGROUNDS = ['bg-custom', 'bg-1', 'bg-2', 'bg-3', 'bg-4']
-// 畫面風格（映射到 WaveSpeed hunyuan-avatar 的 prompt）
+// 畫面風格（映射到 RunningHub digital_customize 的 prompt）
 const VISUAL_STYLES = [
   { key: 'natural', label: '自然真實' },
   { key: 'cinema', label: '電影質感' },
@@ -100,7 +100,7 @@ export default function DigitalHumanPage() {
   const [voices, setVoices] = useState<Voice[]>(FALLBACK_VOICES)
   const [voicesLoading, setVoicesLoading] = useState(true)
 
-  // 肖像照（必填，作爲 hunyuan-avatar 的 image 輸入）
+  // 肖像照（必填，作爲數字人形象圖的 image 輸入，喂給 RunningHub digital_customize）
   const [portraitFile, setPortraitFile] = useState<File | null>(null)
   const [portraitPreview, setPortraitPreview] = useState<string | null>(null)
   const portraitInputRef = useRef<HTMLInputElement>(null)
@@ -167,7 +167,7 @@ export default function DigitalHumanPage() {
     if (genError) setGenError('')
   }
 
-  // ===== 真實生成流程：voice/test 合成音頻 -> digital-human-p0/generate -> 輪詢 task =====
+  // ===== 真實生成流程：voice/test 合成音頻(CosyVoice2) -> digital-human/generate(RunningHub digital_customize) -> 輪詢 task =====
   function finalizeVideoUrl(raw: string): string {
     if (!raw) return ''
     return raw.startsWith('http') ? raw : `${API_BASE}${raw}`
@@ -201,7 +201,7 @@ export default function DigitalHumanPage() {
       fd.append('resolution', resolution)
       const prompt = visualStyleToPrompt(visualStyle)
       if (prompt) fd.append('prompt', prompt)
-      const gres = await fetch(`${API_BASE}/api/digital-human-p0/generate`, {
+      const gres = await fetch(`${API_BASE}/api/digital-human/generate`, {
         method: 'POST',
         body: fd,
       })
@@ -219,7 +219,7 @@ export default function DigitalHumanPage() {
       const estSec = Math.max(5, estimateMinutes(script) * 60)
       for (;;) {
         await sleep(3000)
-        const r = await fetch(`${API_BASE}/api/digital-human-p0/task/${taskId}`)
+        const r = await fetch(`${API_BASE}/api/digital-human/task/${taskId}`)
         const d = await r.json().catch(() => ({}) as any)
         if (d.status === 'done') {
           setVideoUrl(finalizeVideoUrl(d.video_url || ''))
@@ -293,7 +293,7 @@ export default function DigitalHumanPage() {
                 </div>
               </div>
 
-              {/* 肖像照上傳（必填，作爲 hunyuan-avatar 的 image 輸入） */}
+              {/* 肖像照上傳（必填，作爲數字人形象圖 image 輸入） */}
               <div className="rounded-xl border border-violet-200 bg-violet-50/40 p-4">
                 <div className="flex items-center justify-between mb-2">
                   <span className="text-[13px] font-semibold text-gray-800">肖像照（必填）</span>
@@ -642,7 +642,7 @@ export default function DigitalHumanPage() {
                 </div>
               </div>
               <div className="p-3 rounded-xl bg-gray-50 text-[11.5px] text-gray-500 leading-relaxed">
-                數字人視頻由 <span className="text-violet-600 font-medium">WaveSpeed Hunyuan Avatar</span> 雲端推理生成（肖像圖 + 語音 → 脣形同步 → 口播成片）。
+                數字人視頻由 <span className="text-violet-600 font-medium">RunningHub digital_customize（純雲端 API）</span> 推理生成（肖像圖 + 語音 → 脣形同步 → 口播成片）。
               </div>
               <div className="mt-3 p-3 rounded-xl bg-violet-50 border border-violet-100 text-[12.5px] text-gray-600 flex items-center gap-2">
                 <Coins className="w-4 h-4 text-violet-500 shrink-0" />
@@ -726,7 +726,7 @@ export default function DigitalHumanPage() {
             <div className="space-y-3">
               <div className="h-2.5 rounded-full bg-gray-100 overflow-hidden"><div className="h-full bg-gradient-to-r from-violet-500 to-purple-500 transition-all duration-300" style={{width:progress+'%'}}/></div>
               <div className="text-center text-[12.5px] text-gray-500 flex items-center justify-center gap-2">
-                <Loader2 className="w-4 h-4 animate-spin" /> 生成中… {Math.round(progress)}%（提交 WaveSpeed Hunyuan Avatar，輪詢任務狀態）
+                <Loader2 className="w-4 h-4 animate-spin" /> 生成中… {Math.round(progress)}%（提交 RunningHub digital_customize，輪詢任務狀態）
               </div>
               {genTaskId && <div className="text-center text-[11px] text-gray-300">task: {genTaskId}</div>}
             </div>
