@@ -1,12 +1,12 @@
 import { useState, useEffect, useCallback } from 'react'
-import type { ReactNode } from 'react'
 import { Link as RouterLink } from 'react-router-dom'
 import {
   ChevronLeft, Camera, User, Lock, Shield, Eye, EyeOff,
-  Monitor, Clock, Crown, ArrowRight, Plus, Link2, X,
-  TrendingUp, FileVideo, Play, Phone, AlertTriangle, Check,
-  Users as UsersIcon, Laptop, MapPin, Globe,
-  Settings, Bell, Loader2, KeyRound, Fingerprint, RefreshCw, Smartphone as PhoneIcon,
+  Monitor, Clock, Crown, ArrowRight, X,
+  TrendingUp, FileVideo, Play,
+  Users as UsersIcon, Laptop, Smartphone, MapPin, Globe,
+  Settings, Bell, Loader2, KeyRound, Fingerprint, Smartphone as PhoneIcon,
+  AlertTriangle, Check, RefreshCw,
 } from 'lucide-react'
 import { securityApi, formatRelativeTime, formatDateTime } from '../lib/api'
 import type { Device, LoginRecord, TwoFactorStatus } from '../lib/api'
@@ -14,42 +14,10 @@ import type { Device, LoginRecord, TwoFactorStatus } from '../lib/api'
 // ============ Tab 定義 ============
 const TABS = [
   { key: 'profile', label: '帳號資訊', icon: User },
-  { key: 'security', label: '安全設置', icon: Lock },
-  { key: 'prefs',    label: '我的偏好',   icon: Settings },
-  { key: 'notify',   label: '通知設置',   icon: Bell },
-  { key: 'bind',     label: '綁定管理',   icon: Link2 },
+  { key: 'prefs',   label: '我的偏好',  icon: Settings },
+  { key: 'notify',  label: '通知設置',  icon: Bell },
 ] as const
 type TabKey = typeof TABS[number]['key']
-
-// ============ 綁定賬號數據 ============
-interface BindAccount {
-  id: string
-  platform: string
-  icon: ReactNode
-  status: 'bound' | 'unbound'
-  account?: string
-  color?: string
-}
-
-const BIND_ACCOUNTS: BindAccount[] = [
-  {
-    id: 'wechat', platform: '微信',
-    icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#07C160"><path d="M8.691 2.188C3.891 2.188 0 5.476 0 9.53c0 2.212 1.17 4.203 3.002 5.55a.59.59 0 01.213.665l-.39 1.48c-.019.07-.048.141-.048.213 0 .163.13.295.29.295a.326.326 0 00.167-.054l1.903-1.114a.864.864 0 01.717-.098 10.16 10.16 0 002.837.403c.276 0 .543-.027.811-.05-.857-2.578.157-4.972 1.932-6.446 1.703-1.415 3.882-1.98 5.853-1.838-.576-3.583-4.196-6.348-8.596-6.348zM5.785 5.991c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.18A1.17 1.17 0 014.623 7.17c0-.651.52-1.18 1.162-1.18zm5.813 0c.642 0 1.162.529 1.162 1.18a1.17 1.17 0 01-1.162 1.18 1.17 1.17 0 01-1.162-1.18c0-.651.52-1.18 1.162-1.18z"/></svg>,
-    status: 'bound', account: '創作者888', color: '#07C160',
-  },
-  { id: 'phone', platform: '手機號', icon: <Phone className="w-5 h-5 text-blue-500"/>, status: 'bound', account: '138****8888', color: '#3B82F6' },
-  {
-    id: 'google', platform: 'Google',
-    icon: <svg viewBox="0 0 24 24" className="w-5 h-5"><path d="M22.56 12.25c0-.78-.07-1.53-.2-2.25H12v4.26h5.92a5.06 5.06 0 01-2.2 3.32v2.77h3.57c2.08-1.92 3.28-4.74 3.28-8.1z" fill="#4285F4"/><path d="M12 23c2.97 0 5.46-.98 7.28-2.66l-3.57-2.77c-.98.66-2.23 1.06-3.71 1.06-2.86 0-5.29-1.93-6.16-4.53H2.18v2.84C3.99 20.53 7.7 23 12 23z" fill="#34A853"/><path d="M5.84 14.09c-.22-.66-.35-1.36-.35-2.09s.13-1.43.35-2.09V7.07H2.18C1.43 8.55 1 10.22 1 12s.43 3.45 1.18 4.93l2.85-2.84z" fill="#FBBC05"/><path d="M12 5.38c1.62 0 3.06.56 4.21 1.64l3.15-3.15C17.45 2.09 14.97 1 12 1 7.7 1 3.99 3.47 2.18 7.07l3.66 2.84c.87-2.6 3.3-4.53 6.16-4.53z" fill="#EA4335"/></svg>,
-    status: 'unbound', color: '#4285F4',
-  },
-  {
-    id: 'apple', platform: 'Apple ID',
-    icon: <svg viewBox="0 0 24 24" className="w-5 h-5" fill="#000"><path d="M17.05 20.28c-.98.95-2.05.88-3.08.4-1.09-.5-2.08-.48-3.24 0-1.44.62-2.2.44-3.06-.4C2.79 15.25 3.51 7.59 9.05 7.31c1.35.07 2.29.74 3.08.8 1.18-.24 2.31-.93 3.57-.84 1.51.12 2.65.72 3.4 1.83-3.12 1.87-.2.87-2.05 11.18zM15.61 4.68c.71-1.03 1.27-2.41 1.09-3.82-1.18.05-2.54.81-3.33 1.89-.73.98-1.27 2.39-1.05 3.7 1.27.1 2.57-.7 3.29-1.77z"/></svg>,
-    status: 'unbound', color: '#000000',
-  },
-  { id: 'douyin', platform: '抖音', icon: <span className="text-[#FE2C55] font-bold text-sm">♪</span>, status: 'bound', account: '創作者888', color: '#FE2C55' },
-]
 
 // ============ 設備圖標 ============
 function deviceIcon(type: string) {
@@ -271,7 +239,7 @@ export default function AccountPage() {
         </div>
 
         {/* ===== Tab Content ===== */}
-        {(activeTab === 'profile' || activeTab === 'security' || activeTab === 'bind') && (
+        {activeTab === 'profile' && (
           <>
             <div className="grid grid-cols-12 gap-5">
               {/* 左：個人資料 */}
@@ -464,31 +432,6 @@ export default function AccountPage() {
                     </div>
                   )
                 })}
-                </div>
-              </div>
-            </div>
-
-            {/* 底部：賬號綁定 */}
-            <div className="rounded-xl bg-white border border-gray-100 p-6 space-y-4">
-              <h3 className="text-[15px] font-bold text-gray-800">帳號綁定</h3>
-              <div className="grid grid-cols-5 gap-4">
-                {BIND_ACCOUNTS.map(acc => (
-                  <div key={acc.id} className={
-                    'border-2 rounded-xl p-4 text-center transition-all ' +
-                    (acc.status === 'bound' ? 'border-green-200 bg-green-50/30 hover:border-green-300' : 'border-gray-100 bg-gray-50/50 hover:border-gray-200')
-                  }>
-                    <div className="flex justify-center mb-2">{acc.icon}</div>
-                    <div className="text-[13px] font-semibold text-gray-800">{acc.platform}</div>
-                    <div className={'text-[11.5px] mt-1 ' + (acc.status === 'bound' ? 'text-green-600' : 'text-gray-400')}>{acc.status === 'bound' ? '已綁定' : '未綁定'}</div>
-                    {acc.account && <div className="text-[11px] text-gray-500 truncate mt-0.5">{acc.account}</div>}
-                    {acc.status === 'unbound' ? (
-                      <button className="mt-2 text-[11.5px] text-violet-600 border border-violet-200 rounded-lg px-3 py-1 hover:bg-violet-50">綁定</button>
-                    ) : null}
-                  </div>
-                ))}
-                <div className="border-2 border-dashed border-gray-200 rounded-xl p-4 text-center flex flex-col items-center justify-center hover:border-violet-300 cursor-pointer transition-all">
-                  <Plus className="w-6 h-6 text-gray-300 mb-1"/>
-                  <div className="text-[12.5px] text-violet-600 font-medium">綁定更多</div>
                 </div>
               </div>
             </div>

@@ -1,6 +1,6 @@
 import {
   Home, Lightbulb, FileText, Mic, MonitorPlay, GraduationCap, Eye, Bot,
-  Send, BarChart3, User, Award, LayoutGrid, FolderPlus, Receipt,
+  Send, Image, FileBox, Clock, History, User, Receipt,
 } from 'lucide-react'
 import type { LucideIcon } from 'lucide-react'
 
@@ -47,14 +47,6 @@ export const navSections: NavSection[] = [
     items: [
       { label: '帳號管理', path: '/account', icon: User },
       { label: '訂單計費', path: '/billing', icon: Receipt },
-    ],
-  },
-  {
-    header: '增值服務',
-    items: [
-      { label: '導師審核', path: '/mentor', icon: Award },
-      { label: '模板中心', path: '/templates', icon: LayoutGrid },
-      { label: '素材中心', path: '/assets', icon: FolderPlus },
     ],
   },
 ]

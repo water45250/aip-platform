@@ -18,7 +18,6 @@ import DraftBoxPage from './pages/DraftBoxPage'
 import PublishHistoryPage from './pages/PublishHistoryPage'
 import AccountPage from './pages/AccountPage'
 import BillingPage from './pages/BillingPage'
-import PlaceholderPage from './pages/PlaceholderPage'
 
 // 路由守衛：未登錄訪問受保護頁面時，重定向到登錄頁並記錄來源
 function RequireAuth({ children }: { children: ReactElement }) {
@@ -66,10 +65,6 @@ function App() {
         {/* 賬號與費用 */}
         <Route path="account" element={<AccountPage />} />
         <Route path="billing" element={<BillingPage />} />
-        {/* 增值服務 */}
-        <Route path="mentor" element={<PlaceholderPage title="導師審核" />} />
-        <Route path="templates" element={<PlaceholderPage title="模板中心" />} />
-        <Route path="assets" element={<PlaceholderPage title="素材中心" />} />
       </Route>
       <Route path="*" element={<Navigate to="/dashboard" replace />} />
     </Routes>
