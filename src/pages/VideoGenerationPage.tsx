@@ -331,13 +331,14 @@ export default function VideoGenerationPage() {
                 <h2 className="text-[14px] font-semibold text-gray-800">生成說明</h2>
               </div>
               <div className="space-y-2 text-[12.5px] text-gray-600">
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> 腳本/分鏡：DeepSeek / 硅基流動</div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> 生圖：硅基流動 FLUX</div>
-                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> 配音：edge-tts（免費）</div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> 腳本/分鏡：OpenAI / DeepSeek（雲端 LLM）</div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> 生圖/生視頻：fal.ai（FLUX·Kling·Veo）· OpenAI · Kling 官方</div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> 配音：edge-tts（免費雲端 TTS）</div>
+                <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> 音樂：Suno（需 Key）</div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> 合成：FFmpeg 1080p</div>
                 <div className="flex items-center gap-2"><Check className="w-4 h-4 text-green-500" /> 兜底：Archive.org 真實素材 + 漸變占位</div>
               </div>
-              <p className="text-[11px] text-gray-400 mt-3">未配置雲 Key 時自動降級為零成本路徑，仍可產出成片。</p>
+              <p className="text-[11px] text-gray-400 mt-3">配置雲 Key（FAL_KEY / OPENAI_API_KEY / KLING_API_KEY / SUNO_API_KEY）即啟用對應真實生成；未配置時自動降級為零成本路徑，仍可產出成片。</p>
             </section>
           </div>
         </div>
